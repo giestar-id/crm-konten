@@ -119,7 +119,7 @@ export async function GET(req: NextRequest) {
             access_token: page.access_token || longLivedToken,
             token_expires_at: tokenExpiresAt,
             scopes: [
-              "instagram_basic",
+              "instagram_business_basic",
               "instagram_content_publish",
               "pages_show_list",
               "pages_read_engagement",
