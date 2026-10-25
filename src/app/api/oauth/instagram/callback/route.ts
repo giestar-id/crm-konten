@@ -29,16 +29,8 @@ export async function GET(req: NextRequest) {
   // Strip #_ that Instagram automatically appends to authorization codes
   code = code.replace(/#_$/, "");
 
-  const instagramAppId =
-    process.env.INSTAGRAM_APP_ID ||
-    (process.env.META_APP_ID && process.env.META_APP_ID !== "29466741993012816"
-      ? process.env.META_APP_ID
-      : "1435512674602696");
-  const instagramAppSecret =
-    process.env.INSTAGRAM_APP_SECRET ||
-    (process.env.META_APP_SECRET && process.env.META_APP_SECRET !== "bf169b86e2d8385102a281bc2989e6b4"
-      ? process.env.META_APP_SECRET
-      : "d49759e60552b43827f3786a86dff3c4");
+  const instagramAppId = process.env.INSTAGRAM_APP_ID || "1435512674602696";
+  const instagramAppSecret = process.env.INSTAGRAM_APP_SECRET || "d49759e60552b43827f3786a86dff3c4";
   const redirectUri = `${baseUrl}/api/oauth/instagram/callback`;
 
   try {
@@ -48,8 +40,8 @@ export async function GET(req: NextRequest) {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
-        client_id: instagramAppId!,
-        client_secret: instagramAppSecret!,
+        client_id: instagramAppId,
+        client_secret: instagramAppSecret,
         grant_type: "authorization_code",
         redirect_uri: redirectUri,
         code,
@@ -57,10 +49,10 @@ export async function GET(req: NextRequest) {
     });
 
     const tokenData = await tokenRes.json();
-    console.log("[Instagram Callback] Short-lived token status:", tokenRes.status, "has_error:", !!(tokenData.error_message || tokenData.error));
+    console.log("[Instagram Callback] Short-lived token response:", tokenData);
 
     if (tokenData.error_message || tokenData.error) {
-      console.error("[Instagram Callback] Short-lived token failed:", tokenData);
+      console.error("[Instagram Callback] Token exchange failed:", tokenData);
       return NextResponse.redirect(
         new URL(
           `/?oauth_error=${encodeURIComponent(tokenData.error_message || tokenData.error?.message || "Gagal menukar token Instagram")}`,
@@ -94,38 +86,38 @@ export async function GET(req: NextRequest) {
 
     // 3. Ambil data profil Instagram (/me)
     console.log("[Instagram Callback] Fetching Instagram user profile...");
-    let igUsername = `instagram_user_${Date.now().toString(36)}`;
-    let igName = "Instagram Business Account";
-    let avatarUrl = "";
-    let resolvedId = igUserId;
+    let igUsername = `ig_${igUserId || Date.now().toString(36)}`;
+    let igName = "Instagram Business";
+    let avatarUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=60";
+    let resolvedId = igUserId || `ig-${Date.now().toString(36)}`;
 
     try {
+      // Endpoint resmi Instagram Login: hanya field id, username, account_type
       const meRes = await fetch(
-        `https://graph.instagram.com/v21.0/me?fields=id,user_id,username,name,account_type,profile_picture_url&access_token=${longLivedToken}`
+        `https://graph.instagram.com/me?fields=id,username,account_type&access_token=${longLivedToken}`
       );
       const meData = await meRes.json();
-      console.log("[Instagram Callback] Profile data:", meData);
+      console.log("[Instagram Callback] Profile meData:", meData);
 
-      const target = meData.data?.[0] || meData;
-      if (target) {
-        resolvedId = target.id || target.user_id || resolvedId;
-        igUsername = target.username || igUsername;
-        igName = target.name || igUsername;
-        avatarUrl = target.profile_picture_url || "";
+      if (meData && !meData.error) {
+        resolvedId = String(meData.id || resolvedId);
+        igUsername = meData.username || igUsername;
+        igName = meData.username || igName;
       }
     } catch (profileErr) {
       console.error("[Instagram Callback] Error getting profile details:", profileErr);
     }
 
     // 4. Simpan ke Supabase social_accounts
-    console.log("[Instagram Callback] Saving account to Supabase:", { resolvedId, igUsername });
+    const accountRowId = `acc-ig-${resolvedId}`;
+    console.log("[Instagram Callback] Saving account to Supabase:", { accountRowId, resolvedId, igUsername });
     const { error: dbError } = await supabaseServer.from("social_accounts").upsert(
       {
-        id: `acc-ig-${resolvedId}`,
+        id: accountRowId,
         workspace_id: "ws-1",
         platform: "instagram",
-        external_account_id: resolvedId,
-        display_name: igName || igUsername,
+        external_account_id: String(resolvedId),
+        display_name: igName,
         handle: `@${igUsername}`,
         avatar_url: avatarUrl,
         account_type: "Instagram Business",

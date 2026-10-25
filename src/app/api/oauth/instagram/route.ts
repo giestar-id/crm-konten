@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  const instagramAppId =
-    process.env.INSTAGRAM_APP_ID ||
-    (process.env.META_APP_ID && process.env.META_APP_ID !== "29466741993012816"
-      ? process.env.META_APP_ID
-      : "1435512674602696");
+  const instagramAppId = process.env.INSTAGRAM_APP_ID || "1435512674602696";
   const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "";
   const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
   const proto = req.headers.get("x-forwarded-proto") || (isLocal ? "http" : "https");
