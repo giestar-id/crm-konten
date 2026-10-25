@@ -29,8 +29,16 @@ export async function GET(req: NextRequest) {
   // Strip #_ that Instagram automatically appends to authorization codes
   code = code.replace(/#_$/, "");
 
-  const instagramAppId = process.env.INSTAGRAM_APP_ID || process.env.META_APP_ID;
-  const instagramAppSecret = process.env.INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET;
+  const instagramAppId =
+    process.env.INSTAGRAM_APP_ID ||
+    (process.env.META_APP_ID && process.env.META_APP_ID !== "29466741993012816"
+      ? process.env.META_APP_ID
+      : "1435512674602696");
+  const instagramAppSecret =
+    process.env.INSTAGRAM_APP_SECRET ||
+    (process.env.META_APP_SECRET && process.env.META_APP_SECRET !== "bf169b86e2d8385102a281bc2989e6b4"
+      ? process.env.META_APP_SECRET
+      : "d49759e60552b43827f3786a86dff3c4");
   const redirectUri = `${baseUrl}/api/oauth/instagram/callback`;
 
   try {
