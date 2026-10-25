@@ -144,10 +144,70 @@ const defaultIdeas: IdeaItem[] = [];
 const defaultContacts: ContactItem[] = [];
 const defaultNotifications: NotificationItem[] = [];
 
+const VALID_PAGES: ActivePage[] = [
+  "dashboard",
+  "compose",
+  "pipeline",
+  "calendar",
+  "analytics",
+  "ideas",
+  "media",
+  "accounts",
+  "contacts",
+  "notifications",
+  "settings",
+];
+
+function getInitialActivePage(): ActivePage {
+  if (typeof window === "undefined") return "dashboard";
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get("tab") || params.get("page");
+    if (tabParam && VALID_PAGES.includes(tabParam as ActivePage)) {
+      return tabParam as ActivePage;
+    }
+    const hash = window.location.hash.replace("#", "");
+    if (hash && VALID_PAGES.includes(hash as ActivePage)) {
+      return hash as ActivePage;
+    }
+    const saved = localStorage.getItem("sph_active_page");
+    if (saved && VALID_PAGES.includes(saved as ActivePage)) {
+      return saved as ActivePage;
+    }
+  } catch {}
+  return "dashboard";
+}
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [activePage, setActivePage] = useState<ActivePage>("dashboard");
+  const [activePage, setActivePageState] = useState<ActivePage>("dashboard");
+
+  // Sync with URL or saved storage on mount and handle browser back/forward
+  useEffect(() => {
+    const initial = getInitialActivePage();
+    setActivePageState(initial);
+
+    const onPopState = () => {
+      const page = getInitialActivePage();
+      setActivePageState(page);
+    };
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  const setActivePage = useCallback((page: ActivePage) => {
+    setActivePageState(page);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("sph_active_page", page);
+        const url = new URL(window.location.href);
+        url.searchParams.set("tab", page);
+        window.history.replaceState({ page }, "", url.toString());
+      } catch {}
+    }
+  }, []);
   const [searchQuery, setSearchQuery] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 

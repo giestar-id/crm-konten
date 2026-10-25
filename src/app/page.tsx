@@ -47,11 +47,18 @@ function MainContent() {
       showToast(`Berhasil! Akun ${connected.toUpperCase()} (${handle || ""}) telah terhubung.`);
       setActivePage("accounts");
       refreshFromSupabase();
-      window.history.replaceState({}, "", window.location.pathname);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("connected");
+      url.searchParams.delete("handle");
+      url.searchParams.set("tab", "accounts");
+      window.history.replaceState({}, "", url.toString());
     } else if (oauthError) {
       showToast(`Gagal otorisasi: ${oauthError}`);
       setActivePage("accounts");
-      window.history.replaceState({}, "", window.location.pathname);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("oauth_error");
+      url.searchParams.set("tab", "accounts");
+      window.history.replaceState({}, "", url.toString());
     }
   }, [showToast, setActivePage, refreshFromSupabase]);
 
