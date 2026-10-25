@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "Social Post Hub — Multi-Platform Posting & Content CRM",
   description: "Universal 1-click multi-platform posting to YouTube, Instagram, TikTok & Facebook with integrated content CRM, scheduling, and analytics.",
   other: {
-    "tiktok-developers-site-verification": "aY5fZn3JAkUQIQtc5HFLFc48ZGF45c1R",
+    "tiktok-developers-site-verification": "ZBK00FH9vzCRJaNcnyutYvRF1RAAY71K",
   },
 };
 
