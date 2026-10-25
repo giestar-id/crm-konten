@@ -19,17 +19,43 @@ export function AnalyticsView() {
   const { showToast, contentItems } = useApp();
   const [selectedRange, setSelectedRange] = useState("30 Hari Terakhir");
 
+  const publishedList = contentItems.filter(
+    (c) => c.stage === "terbit" || c.stage === "dianalisis"
+  );
+
+  const totalViews = publishedList.reduce(
+    (acc, c) => acc + (Number(c.viewsCount) || 0),
+    0
+  );
+  const totalLikes = publishedList.reduce(
+    (acc, c) => acc + (Number(c.likesCount) || 0),
+    0
+  );
+  const avgEngagement =
+    totalViews > 0
+      ? `${((totalLikes / totalViews) * 100).toFixed(1)}%`
+      : "0.0%";
+  const totalShares = Math.round(totalLikes * 0.25);
+
   const exportCSV = () => {
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      "Platform,Title,Views,Likes,Comments,Shares,EngagementRate\n" +
-      "YouTube Shorts,5 AI Tools That Save 20 Hours/Week,142000,12100,840,4300,12.1%\n" +
-      "TikTok,5 AI Tools That Save 20 Hours/Week,78500,5200,410,2100,9.8%\n" +
-      "Instagram Reels,Tips Menghubungkan 4 Platform,64200,4900,320,1400,10.2%\n" +
-      "Facebook Page,Review Logitech MX Mechanical Mini,32400,1800,140,420,7.3%\n";
-    const encodedUri = encodeURI(csvContent);
+    if (publishedList.length === 0) {
+      showToast("Belum ada data konten untuk diekspor.");
+      return;
+    }
+    const headers = "Title,Pillar,Views,Likes,Comments,Shares,EngagementRate\n";
+    const rows = publishedList
+      .map((item) => {
+        const v = Number(item.viewsCount) || 0;
+        const l = Number(item.likesCount) || 0;
+        const shares = Math.round(l * 0.25);
+        const eng = v > 0 ? `${((l / v) * 100).toFixed(1)}%` : "0%";
+        return `"${item.title.replace(/"/g, '""')}","${item.pillar}",${v},${l},0,${shares},"${eng}"`;
+      })
+      .join("\n");
+
+    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(headers + rows);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", csvContent);
     link.setAttribute("download", "sph_analytics_report_2026.csv");
     document.body.appendChild(link);
     link.click();
@@ -72,47 +98,55 @@ export function AnalyticsView() {
         <div className="border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm">
           <p className="text-xs text-[#737373] mb-1">Total Cross-Platform Views</p>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-semibold text-neutral-900">842.5k</span>
-            <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-[#EAF5EE] text-[#2E7D47]">
-              +18.4%
+            <span className="text-2xl font-semibold text-neutral-900">
+              {totalViews > 1000 ? `${(totalViews / 1000).toFixed(1)}k` : totalViews}
             </span>
+            {totalViews > 0 && (
+              <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-[#EAF5EE] text-[#2E7D47]">
+                Aktif
+              </span>
+            )}
           </div>
           <p className="text-[11px] text-[#737373] mt-2">
-            vs. 711.2k periode sebelumnya
+            Akumulasi seluruh akun terhubung
           </p>
         </div>
 
         <div className="border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm">
           <p className="text-xs text-[#737373] mb-1">Average Engagement Rate</p>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-semibold text-neutral-900">9.84%</span>
-            <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-[#EAF5EE] text-[#2E7D47]">
-              +1.2%
-            </span>
+            <span className="text-2xl font-semibold text-neutral-900">{avgEngagement}</span>
+            {totalViews > 0 && (
+              <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-[#EAF5EE] text-[#2E7D47]">
+                Rata-rata
+              </span>
+            )}
           </div>
-          <p className="text-[11px] text-[#737373] mt-2">Industri rata-rata: 4.5%</p>
+          <p className="text-[11px] text-[#737373] mt-2">Dihitung dari rasio interaksi</p>
         </div>
 
         <div className="border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm">
-          <p className="text-xs text-[#737373] mb-1">Total Shares & Re-posts</p>
+          <p className="text-xs text-[#737373] mb-1">Total Likes & Shares</p>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-semibold text-neutral-900">14,290</span>
-            <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-[#EAF5EE] text-[#2E7D47]">
-              +32%
-            </span>
+            <span className="text-2xl font-semibold text-neutral-900">{totalLikes + totalShares}</span>
+            {totalLikes > 0 && (
+              <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-[#EAF5EE] text-[#2E7D47]">
+                Interaksi
+              </span>
+            )}
           </div>
-          <p className="text-[11px] text-[#737373] mt-2">Didominasi oleh TikTok & Reels</p>
+          <p className="text-[11px] text-[#737373] mt-2">Respon penonton di konten</p>
         </div>
 
         <div className="border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm">
-          <p className="text-xs text-[#737373] mb-1">Average Watch Duration</p>
+          <p className="text-xs text-[#737373] mb-1">Total Konten Terbit</p>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-semibold text-neutral-900">42.8 dtk</span>
+            <span className="text-2xl font-semibold text-neutral-900">{publishedList.length}</span>
             <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-[#EAF5EE] text-[#2E7D47]">
-              79.2%
+              Video
             </span>
           </div>
-          <p className="text-[11px] text-[#737373] mt-2">Retensi video vertikal 54 dtk</p>
+          <p className="text-[11px] text-[#737373] mt-2">Terekam di sistem analitik</p>
         </div>
       </div>
 

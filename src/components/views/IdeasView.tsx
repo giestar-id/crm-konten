@@ -34,7 +34,7 @@ export function IdeasView() {
   const [quickRef, setQuickRef] = useState("");
 
   // AI Content Generator State
-  const [aiTopic, setAiTopic] = useState("Next.js 16 & DeepSeek Coding Workflow");
+  const [aiTopic, setAiTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiResult, setAiResult] = useState<{
     hooks: string[];
@@ -43,22 +43,7 @@ export function IdeasView() {
     captionTT: string;
     youtubeTitle: string;
     hashtags: string[];
-  } | null>({
-    hooks: [
-      "1. Berhenti tulis boilerplate manual di Next.js 16. Pakai trik Server Actions ini!",
-      "2. Mengapa workflow coding ini memangkas waktu deploy saya dari 1 jam jadi 5 menit?",
-      "3. 3 Alasan kenapa framework monokrom bikin konversi landing page naik 40%.",
-    ],
-    scriptOutline:
-      "0-5s: Hook visual perbandingan sebelum & sesudah.\n5-20s: Live demo command npx & setup parallel runner.\n20-40s: Breakdown kode Server Action tanpa state berbelit.\n40-50s: Call to action cek source code di bio.",
-    captionIG:
-      "Arsitektur modern Next.js 16 + parallel background runner terbukti paling cepat untuk scale up project solo creator. Cek tips lengkapnya di bio! #NextJS #Fullstack #Developer",
-    captionTT:
-      "Trik coding solo dev yang wajib lu tau tahun 2026. Jangan coding manual lagi! #CodingTips #TechTok #WebDev",
-    youtubeTitle:
-      "Masterclass Next.js 16 Server Actions: Fullstack dalam Hitungan Menit!",
-    hashtags: ["#NextJS", "#Fullstack", "#AIWorkflow", "#SoloCreator"],
-  });
+  } | null>(null);
 
   const handleCaptureIdea = (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,61 +181,72 @@ export function IdeasView() {
               </span>
             </div>
 
-            {ideas.map((idea) => (
-              <div
-                key={idea.id}
-                className="border border-[#EAEAEA] rounded-xl p-4 bg-white shadow-sm space-y-2.5 hover:border-neutral-300 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-neutral-100 text-neutral-800">
-                    {idea.niche}
-                  </span>
-                  <span className="text-[10px] text-neutral-400 font-mono">
-                    {idea.createdAt}
-                  </span>
-                </div>
-
-                <h4 className="text-xs font-semibold text-neutral-900 leading-snug">
-                  {idea.title}
-                </h4>
-
-                {idea.notes && (
-                  <p className="text-[11px] text-[#737373] leading-relaxed">
-                    {idea.notes}
-                  </p>
-                )}
-
-                {idea.referenceUrl && (
-                  <a
-                    href={idea.referenceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] text-neutral-700 hover:text-neutral-900 font-medium hover:underline"
-                  >
-                    <span>Referensi Link</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-
-                <div className="flex items-center justify-between pt-2 border-t border-[#EAEAEA]">
-                  <button
-                    onClick={() => deleteIdea(idea.id)}
-                    className="text-neutral-400 hover:text-red-600 transition-colors"
-                    title="Hapus"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-
-                  <button
-                    onClick={() => convertIdeaToPipeline(idea.id)}
-                    className="px-3 py-1 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors flex items-center gap-1"
-                  >
-                    <span>Jadikan Kartu Pipeline</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </button>
-                </div>
+            {ideas.length === 0 ? (
+              <div className="p-8 border border-dashed border-[#EAEAEA] rounded-xl text-center bg-[#FAFAFA] space-y-1">
+                <p className="text-xs font-semibold text-neutral-800">
+                  Belum ada ide konten tersimpan
+                </p>
+                <p className="text-[11px] text-[#737373]">
+                  Gunakan form Quick Capture di atas untuk menyimpan ide konten Anda.
+                </p>
               </div>
-            ))}
+            ) : (
+              ideas.map((idea) => (
+                <div
+                  key={idea.id}
+                  className="border border-[#EAEAEA] rounded-xl p-4 bg-white shadow-sm space-y-2.5 hover:border-neutral-300 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-neutral-100 text-neutral-800">
+                      {idea.niche}
+                    </span>
+                    <span className="text-[10px] text-neutral-400 font-mono">
+                      {idea.createdAt}
+                    </span>
+                  </div>
+
+                  <h4 className="text-xs font-semibold text-neutral-900 leading-snug">
+                    {idea.title}
+                  </h4>
+
+                  {idea.notes && (
+                    <p className="text-[11px] text-[#737373] leading-relaxed">
+                      {idea.notes}
+                    </p>
+                  )}
+
+                  {idea.referenceUrl && (
+                    <a
+                      href={idea.referenceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] text-neutral-700 hover:text-neutral-900 font-medium hover:underline"
+                    >
+                      <span>Referensi Link</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2 border-t border-[#EAEAEA]">
+                    <button
+                      onClick={() => deleteIdea(idea.id)}
+                      className="text-neutral-400 hover:text-red-600 transition-colors"
+                      title="Hapus"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={() => convertIdeaToPipeline(idea.id)}
+                      className="px-3 py-1 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors flex items-center gap-1"
+                    >
+                      <span>Jadikan Kartu Pipeline</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

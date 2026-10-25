@@ -76,42 +76,54 @@ export function DashboardView() {
             <div className="border border-[#EAEAEA] rounded-xl p-5 bg-white flex items-center justify-between hover:border-neutral-300 transition-colors shadow-sm">
               <div className="flex items-center gap-5">
                 {/* SVG Radial Donut Gauge */}
-                <div className="relative w-[86px] h-[86px] flex items-center justify-center shrink-0">
-                  <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="38"
-                      fill="none"
-                      stroke="#E5E5E5"
-                      strokeWidth="14"
-                    />
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="38"
-                      fill="none"
-                      stroke="#111111"
-                      strokeWidth="14"
-                      strokeDasharray="238.76"
-                      strokeDashoffset="86"
-                      strokeLinecap="butt"
-                      className="transition-all duration-700 ease-out"
-                    />
-                  </svg>
-                  <span className="absolute text-xs font-semibold text-neutral-900">
-                    64%
-                  </span>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-[#737373] mb-1">
-                    Monthly Post Target
-                  </p>
-                  <h2 className="text-[22px] font-semibold tracking-tight text-neutral-900 leading-snug">
-                    32 / 50 Posts
-                  </h2>
-                  <p className="text-xs text-[#737373] mt-1">Bulan Ini (Oktober)</p>
-                </div>
+                {(() => {
+                  const publishedCount = contentItems.filter(
+                    (c) => c.stage === "terbit" || c.stage === "dianalisis"
+                  ).length;
+                  const targetCount = 30;
+                  const pct = Math.min(100, Math.round((publishedCount / targetCount) * 100));
+                  const strokeOffset = 238.76 - (238.76 * pct) / 100;
+                  return (
+                    <>
+                      <div className="relative w-[86px] h-[86px] flex items-center justify-center shrink-0">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="38"
+                            fill="none"
+                            stroke="#E5E5E5"
+                            strokeWidth="14"
+                          />
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="38"
+                            fill="none"
+                            stroke="#111111"
+                            strokeWidth="14"
+                            strokeDasharray="238.76"
+                            strokeDashoffset={strokeOffset}
+                            strokeLinecap="butt"
+                            className="transition-all duration-700 ease-out"
+                          />
+                        </svg>
+                        <span className="absolute text-xs font-semibold text-neutral-900">
+                          {pct}%
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-[#737373] mb-1">
+                          Monthly Post Target
+                        </p>
+                        <h2 className="text-[22px] font-semibold tracking-tight text-neutral-900 leading-snug">
+                          {publishedCount} / {targetCount} Posts
+                        </h2>
+                        <p className="text-xs text-[#737373] mt-1">Bulan Ini (Oktober)</p>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
               <button
                 onClick={() => setActivePage("pipeline")}
@@ -154,16 +166,23 @@ export function DashboardView() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-[#737373] mb-1">Total Cross-Platform Views</p>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-[22px] font-semibold tracking-tight text-neutral-900 leading-snug">
-                    842.5k
-                  </h2>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#EAF5EE] text-[#2E7D47]">
-                    <TrendingUp className="w-3 h-3" />
-                    +18.4%
-                  </span>
-                </div>
-                <p className="text-xs text-[#737373] mt-1">Minggu Ini (YT, IG, TT, FB)</p>
+                {(() => {
+                  const totalV = contentItems.reduce((acc, c) => acc + (Number(c.viewsCount) || 0), 0);
+                  return (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-[22px] font-semibold tracking-tight text-neutral-900 leading-snug">
+                        {totalV > 1000 ? `${(totalV / 1000).toFixed(1)}k` : totalV}
+                      </h2>
+                      {totalV > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#EAF5EE] text-[#2E7D47]">
+                          <TrendingUp className="w-3 h-3" />
+                          Aktif
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
+                <p className="text-xs text-[#737373] mt-1">Akumulasi Seluruh Platform</p>
               </div>
             </div>
           </div>
@@ -506,45 +525,70 @@ export function DashboardView() {
           </div>
 
           {/* Highlighted Top Content Card */}
-          <div className="border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-medium text-[#737373]">
-                Top Performing Video
-              </span>
-              <button
-                onClick={() => setActivePage("analytics")}
-                className="text-neutral-400 hover:text-neutral-700 transition-colors"
-                title="Lihat Detail Analitik"
-              >
-                <Info className="w-4 h-4" />
-              </button>
-            </div>
+          {(() => {
+            const published = contentItems
+              .filter((c) => c.stage === "terbit" || c.stage === "dianalisis")
+              .sort((a, b) => (Number(b.viewsCount) || 0) - (Number(a.viewsCount) || 0));
+            const topItem = published[0];
 
-            <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 rounded-xl bg-[#DF5835] flex items-center justify-center text-white text-xl font-bold mb-3 shadow-sm">
-                AI
-              </div>
-              <h3 className="text-[14px] font-semibold text-neutral-900 leading-snug px-2">
-                5 AI Tools That Save 20 Hours/Week
-              </h3>
-              <p className="text-[11px] text-[#737373] mt-1">
-                YouTube Shorts & TikTok Viral Hit
-              </p>
-              <div className="text-[28px] font-semibold text-neutral-900 tracking-tight mt-3 mb-1">
-                248.6k
-              </div>
-              <p className="text-xs text-neutral-700 leading-relaxed max-w-[200px]">
-                Total Views & 19.4k Likes dalam 7 hari publikasi
-              </p>
-            </div>
+            return (
+              <div className="border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-medium text-[#737373]">
+                    Top Performing Video
+                  </span>
+                  <button
+                    onClick={() => setActivePage("analytics")}
+                    className="text-neutral-400 hover:text-neutral-700 transition-colors"
+                    title="Lihat Detail Analitik"
+                  >
+                    <Info className="w-4 h-4" />
+                  </button>
+                </div>
 
-            <div className="mt-5 pt-3 border-t border-[#EAEAEA] flex items-center justify-between text-xs">
-              <span className="text-neutral-500">Status di Pipeline:</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#EAF5EE] text-[#2E7D47]">
-                Dianalisis (Active)
-              </span>
-            </div>
-          </div>
+                {topItem ? (
+                  <>
+                    <div className="flex flex-col items-center text-center">
+                      <div className="w-12 h-12 rounded-xl bg-[#DF5835] flex items-center justify-center text-white text-xl font-bold mb-3 shadow-sm">
+                        {topItem.title.substring(0, 2).toUpperCase()}
+                      </div>
+                      <h3 className="text-[14px] font-semibold text-neutral-900 leading-snug px-2">
+                        {topItem.title}
+                      </h3>
+                      <p className="text-[11px] text-[#737373] mt-1">
+                        {topItem.pillar}
+                      </p>
+                      <div className="text-[28px] font-semibold text-neutral-900 tracking-tight mt-3 mb-1">
+                        {Number(topItem.viewsCount) > 1000
+                          ? `${(Number(topItem.viewsCount) / 1000).toFixed(1)}k`
+                          : Number(topItem.viewsCount) || 0}
+                      </div>
+                      <p className="text-xs text-neutral-700 leading-relaxed max-w-[200px]">
+                        Total views & {Number(topItem.likesCount) || 0} likes
+                      </p>
+                    </div>
+
+                    <div className="mt-5 pt-3 border-t border-[#EAEAEA] flex items-center justify-between text-xs">
+                      <span className="text-neutral-500">Status di Pipeline:</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#EAF5EE] text-[#2E7D47]">
+                        {topItem.stage.toUpperCase()}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="py-6 text-center text-xs text-neutral-400 space-y-2">
+                    <p>Belum ada video yang diterbitkan.</p>
+                    <button
+                      onClick={() => setActivePage("compose")}
+                      className="text-neutral-900 font-medium hover:underline inline-block text-[11px]"
+                    >
+                      + Buat konten pertama
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Ready to Publish Quick Tile */}
           <div className="border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm">

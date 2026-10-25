@@ -130,7 +130,7 @@ const defaultWorkspaces: Workspace[] = [
     color: "#0A0A0A",
     initials: "GS",
     connectedAccountsCount: 0,
-    contentCount: 8,
+    contentCount: 0,
     nextScheduledPost: "Jadwal kosong",
     role: "Owner",
     createdAt: "2026-01-01",
@@ -138,288 +138,11 @@ const defaultWorkspaces: Workspace[] = [
 ];
 
 const defaultAccounts: SocialAccount[] = [];
-
-const defaultContent: ContentItem[] = [
-  {
-    id: "c-1",
-    workspaceId: "ws-1",
-    title: "DeepSeek vs Claude 3.7: Perbandingan Coding Benchmark Nyata",
-    stage: "ide",
-    pillar: "Tech Reviews",
-    priority: "high",
-    deadline: "2026-11-02",
-    notes: "Fokus pada efisiensi token, kecepatan penulisan regex, dan akurasi Next.js App Router.",
-    checklist: [
-      { id: "ck-1", text: "Kumpulkan 3 kasus uji benchmark coding", done: true },
-      { id: "ck-2", text: "Screen recording stopwatch", done: false },
-    ],
-    tags: ["#AI", "#Coding", "#NextJS"],
-    targetPlatforms: ["youtube", "instagram", "tiktok", "facebook"],
-    createdAt: "2026-10-20",
-  },
-  {
-    id: "c-2",
-    workspaceId: "ws-1",
-    title: "Framework Desain UI Monokrom: Mengapa Brand Mewah Memakainya?",
-    stage: "naskah",
-    pillar: "Personal Brand",
-    priority: "medium",
-    deadline: "2026-10-29",
-    script: "Hook: Perhatikan Apple, Linear, dan Vercel.",
-    checklist: [
-      { id: "ck-3", text: "Riset Apple vs kompetitor", done: true },
-      { id: "ck-4", text: "Finalisasi naskah 60 detik", done: true },
-    ],
-    tags: ["#DesignSystem", "#Minimalism"],
-    targetPlatforms: ["youtube", "instagram", "tiktok"],
-    createdAt: "2026-10-21",
-  },
-  {
-    id: "c-3",
-    workspaceId: "ws-1",
-    title: "5 Setup Desk Minimalis Solo Creator 2026",
-    stage: "produksi",
-    pillar: "Personal Brand",
-    priority: "high",
-    deadline: "2026-10-28",
-    checklist: [
-      { id: "ck-5", text: "Take video b-roll lighting malam hari", done: true },
-      { id: "ck-6", text: "Audio voiceover Shure SM7B", done: true },
-    ],
-    tags: ["#DeskSetup", "#Workspace"],
-    targetPlatforms: ["youtube", "instagram", "tiktok", "facebook"],
-    createdAt: "2026-10-22",
-  },
-  {
-    id: "c-4",
-    workspaceId: "ws-1",
-    title: "Next.js 16 Server Actions & Parallel Queue Masterclass",
-    stage: "editing",
-    pillar: "Tutorials",
-    priority: "high",
-    deadline: "2026-10-26",
-    checklist: [
-      { id: "ck-7", text: "Cut dead air & filler words", done: true },
-      { id: "ck-8", text: "Animasi pop-up code syntax highlight", done: true },
-    ],
-    tags: ["#NextJS", "#Fullstack"],
-    targetPlatforms: ["youtube", "facebook"],
-    createdAt: "2026-10-23",
-  },
-  {
-    id: "c-5",
-    workspaceId: "ws-1",
-    title: "5 AI Tools That Save 20 Hours/Week (Solo Creator Edition)",
-    stage: "siap_posting",
-    pillar: "Tech Reviews",
-    priority: "high",
-    deadline: "2026-10-25",
-    notes: "File video final ai_tools_2026.mp4 terlampir. Siap 1-click publish.",
-    checklist: [
-      { id: "ck-9", text: "Render format MP4 1080x1920", done: true },
-      { id: "ck-10", text: "Validasi audio tidak copyright", done: true },
-    ],
-    tags: ["#AITools", "#Productivity"],
-    mediaAssetId: "m-1",
-    mediaName: "ai_tools_2026.mp4",
-    targetPlatforms: ["youtube", "instagram", "tiktok", "facebook"],
-    createdAt: "2026-10-24",
-  },
-  {
-    id: "c-6",
-    workspaceId: "ws-1",
-    title: "Review Keyboard Low-Profile Logitech MX Mechanical Mini",
-    stage: "terjadwal",
-    pillar: "Sponsorships",
-    priority: "high",
-    deadline: "2026-10-25",
-    scheduledAt: "2026-10-25T19:00:00+07:00",
-    checklist: [{ id: "ck-11", text: "Approval brand manager", done: true }],
-    tags: ["#Logitech", "#MechanicalKeyboard"],
-    targetPlatforms: ["youtube", "instagram", "tiktok", "facebook"],
-    createdAt: "2026-10-24",
-  },
-  {
-    id: "c-7",
-    workspaceId: "ws-1",
-    title: "Tips Menghubungkan 4 Platform Sekaligus dengan 1-Click Publishing",
-    stage: "terbit",
-    pillar: "Tutorials",
-    priority: "medium",
-    deadline: "2026-10-24",
-    viewsCount: 124500,
-    likesCount: 8920,
-    checklist: [],
-    tags: ["#Automation", "#SocialMedia"],
-    targetPlatforms: ["youtube", "instagram", "tiktok", "facebook"],
-    publishedUrl: "https://studio.youtube.com",
-    createdAt: "2026-10-23",
-  },
-  {
-    id: "c-8",
-    workspaceId: "ws-1",
-    title: "Cara Mengotomasi Workflow Konten CRM Tanpa Buka 4 Tab Berbeda",
-    stage: "dianalisis",
-    pillar: "Tech Reviews",
-    priority: "high",
-    deadline: "2026-10-22",
-    viewsCount: 248600,
-    likesCount: 19400,
-    checklist: [],
-    tags: ["#ContentCRM", "#Productivity"],
-    targetPlatforms: ["youtube", "instagram", "tiktok", "facebook"],
-    publishedUrl: "https://youtube.com/shorts/sph_case_study_99",
-    createdAt: "2026-10-21",
-  },
-];
-
-const defaultMedia: MediaAsset[] = [
-  {
-    id: "m-1",
-    workspaceId: "ws-1",
-    name: "ai_tools_2026.mp4",
-    duration: "0:54",
-    aspectRatio: "9:16",
-    size: "48.2 MB",
-    resolution: "1080 x 1920 (FHD)",
-    thumbnailUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&auto=format&fit=crop&q=60",
-    uploadedAt: "2026-10-24 14:20",
-    tags: ["Vertical", "Shorts", "Reels"],
-  },
-  {
-    id: "m-2",
-    workspaceId: "ws-1",
-    name: "logitech_mx_review.mp4",
-    duration: "1:12",
-    aspectRatio: "9:16",
-    size: "64.5 MB",
-    resolution: "1080 x 1920 (FHD)",
-    thumbnailUrl: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&auto=format&fit=crop&q=60",
-    uploadedAt: "2026-10-23 18:05",
-    tags: ["Sponsorship", "Hardware"],
-  },
-  {
-    id: "m-3",
-    workspaceId: "ws-1",
-    name: "monochrome_ui_guide.mp4",
-    duration: "14:20",
-    aspectRatio: "16:9",
-    size: "420.0 MB",
-    resolution: "3840 x 2160 (4K UHD)",
-    thumbnailUrl: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=400&auto=format&fit=crop&q=60",
-    uploadedAt: "2026-10-22 11:30",
-    tags: ["Longform", "YouTube Masterclass"],
-  },
-];
-
-const defaultIdeas: IdeaItem[] = [
-  {
-    id: "idea-1",
-    workspaceId: "ws-1",
-    title: "A/B Testing Thumbnail Monokrom vs Vibrant Colors di YouTube Shorts",
-    niche: "Creative Strategy",
-    notes: "Uji coba 2 akun identik: satu monokrom editorial, satu font kuning bold.",
-    referenceUrl: "https://linear.app/method/design",
-    tags: ["#Experiments", "#Thumbnail"],
-    createdAt: "2026-10-24",
-  },
-  {
-    id: "idea-2",
-    workspaceId: "ws-1",
-    title: "Cara Menolak Tawaran Sponsor Murah & Menaikkan Rate Card 3x Lipat",
-    niche: "Creator Business",
-    notes: "Template email negosiasi, value-based pricing, dan bundling multi-platform.",
-    referenceUrl: "",
-    tags: ["#Sponsorships", "#Pricing"],
-    createdAt: "2026-10-23",
-  },
-  {
-    id: "idea-3",
-    workspaceId: "ws-1",
-    title: "Behind the Scenes: Cara Saya Batching 12 Video Vertikal dalam 1 Hari",
-    niche: "Productivity",
-    notes: "Workflow audio recording dan template auto-caption cut.",
-    referenceUrl: "",
-    tags: ["#Productivity", "#Batching"],
-    createdAt: "2026-10-22",
-  },
-];
-
-const defaultContacts: ContactItem[] = [
-  {
-    id: "con-1",
-    workspaceId: "ws-1",
-    name: "Sarah Jenkins",
-    company: "Vercel",
-    role: "Developer Relations Partner",
-    email: "sarah.j@vercel.com",
-    dealStatus: "Signed",
-    dealValue: 4500,
-    linkedContentTitle: "Next.js 16 Server Actions & Parallel Queue Masterclass",
-  },
-  {
-    id: "con-2",
-    workspaceId: "ws-1",
-    name: "Alex Rivera",
-    company: "Supabase",
-    role: "Growth Marketing Lead",
-    email: "alex@supabase.io",
-    dealStatus: "Signed",
-    dealValue: 3200,
-    linkedContentTitle: "Cara Mengotomasi Workflow Konten CRM",
-  },
-  {
-    id: "con-3",
-    workspaceId: "ws-1",
-    name: "Elena Rostova",
-    company: "Linear",
-    role: "Brand Partnership",
-    email: "elena@linear.app",
-    dealStatus: "Negotiation",
-    dealValue: 2800,
-  },
-  {
-    id: "con-4",
-    workspaceId: "ws-1",
-    name: "Dimas Wicaksono",
-    company: "Logitech Indonesia",
-    role: "Creator Specialist",
-    email: "dimas@logitech.co.id",
-    dealStatus: "Sponsored",
-    dealValue: 1500,
-    linkedContentTitle: "Review Keyboard Low-Profile Logitech MX Mechanical Mini",
-  },
-];
-
-const defaultNotifications: NotificationItem[] = [
-  {
-    id: "notif-1",
-    workspaceId: "ws-1",
-    title: "1-Click Publish Sukses!",
-    message: "Konten '5 AI Tools That Save 20 Hours/Week' berhasil terbit ke YouTube Shorts, IG Reels, TikTok, dan Facebook Page.",
-    type: "publish_success",
-    time: "10 menit yang lalu",
-    read: false,
-  },
-  {
-    id: "notif-2",
-    workspaceId: "ws-1",
-    title: "Penjadwalan Aktif (19:00 WIB)",
-    message: "Konten sponsorship 'Review Logitech MX Mechanical Mini' siap dipublikasikan secara otomatis tepat waktu.",
-    type: "system",
-    time: "1 jam yang lalu",
-    read: false,
-  },
-  {
-    id: "notif-3",
-    workspaceId: "ws-1",
-    title: "Token OAuth YouTube Segar",
-    message: "Kuota harian API YouTube: 8,400 dari 10,000 unit tersedia.",
-    type: "system",
-    time: "3 jam yang lalu",
-    read: true,
-  },
-];
+const defaultContent: ContentItem[] = [];
+const defaultMedia: MediaAsset[] = [];
+const defaultIdeas: IdeaItem[] = [];
+const defaultContacts: ContactItem[] = [];
+const defaultNotifications: NotificationItem[] = [];
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -572,9 +295,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           name: w.name,
           description: w.description || "",
           color: w.color || "#0A0A0A",
-          initials: w.initials || "WS",
-          connectedAccountsCount: 4,
-          contentCount: 8,
+          initials: w.initials || "GS",
+          connectedAccountsCount: 0,
+          contentCount: 0,
           role: w.role || "Owner",
           createdAt: w.created_at?.split("T")[0] || "2026-01-01",
         }));
@@ -584,7 +307,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       // 2. Content Items (Pipeline CRM)
       const { data: cData, error: cError } = await supabase.from("content_items").select("*").order("created_at", { ascending: false });
-      if (!cError && cData && cData.length > 0) {
+      if (!cError && Array.isArray(cData)) {
         setIsSupabaseLive(true);
         const mappedContent: ContentItem[] = cData.map((c: any) => ({
           id: c.id,
@@ -612,7 +335,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       // 3. Ideas Bank
       const { data: iData, error: iError } = await supabase.from("ideas").select("*").order("created_at", { ascending: false });
-      if (!iError && iData && iData.length > 0) {
+      if (!iError && Array.isArray(iData)) {
         setIdeas(
           iData.map((i: any) => ({
             id: i.id,
@@ -629,7 +352,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       // 4. Contacts (Sponsors)
       const { data: conData, error: conError } = await supabase.from("contacts").select("*").order("created_at", { ascending: false });
-      if (!conError && conData && conData.length > 0) {
+      if (!conError && Array.isArray(conData)) {
         setContacts(
           conData.map((con: any) => ({
             id: con.id,
@@ -645,7 +368,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         );
       }
 
-      // 5. Social Accounts
+      // 5. Media Assets
+      const { data: mData, error: mError } = await supabase.from("media_assets").select("*").order("created_at", { ascending: false });
+      if (!mError && Array.isArray(mData)) {
+        setMediaAssets(
+          mData.map((m: any) => ({
+            id: m.id,
+            workspaceId: m.workspace_id,
+            name: m.name,
+            duration: m.duration || "--:--",
+            aspectRatio: m.aspect_ratio || "9:16",
+            size: m.size || "0 MB",
+            resolution: m.resolution || "1080 x 1920",
+            thumbnailUrl: m.thumbnail_url || "",
+            uploadedAt: m.created_at?.split("T")[0] || "2026-10-25",
+            tags: m.tags || [],
+          }))
+        );
+      }
+
+      // 6. Social Accounts
       const { data: accData, error: accError } = await supabase.from("social_accounts").select("*");
       if (!accError && Array.isArray(accData)) {
         setSocialAccounts(

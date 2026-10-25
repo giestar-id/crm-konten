@@ -31,25 +31,17 @@ export function CalendarView() {
     const isCurrentMonth = i >= 3 && i <= 33;
     const isToday = i === 26; // Oct 25
 
-    // Check if there are posts on this day
-    const dayPosts =
-      isToday
-        ? scheduledItems.filter(
-            (s) => s.stage === "terjadwal" || s.title.includes("Review")
-          )
-        : i === 25
-        ? scheduledItems.filter((s) => s.stage === "terbit")
-        : i === 28
-        ? [
-            {
-              id: "sch-future-1",
-              title: "Next.js 16 Server Actions Tutorial",
-              stage: "terjadwal",
-              time: "19:00 WIB",
-              platforms: ["youtube", "instagram"],
-            },
-          ]
-        : [];
+    // Check if there are posts on this day from actual scheduledItems
+    const dayPosts = isCurrentMonth
+      ? scheduledItems.filter((s) => {
+          if (!s.deadline) return false;
+          const parts = s.deadline.split("-");
+          if (parts.length === 3) {
+            return parseInt(parts[2], 10) === dayNumber;
+          }
+          return false;
+        })
+      : [];
 
     return {
       cellIndex: i,
@@ -217,56 +209,60 @@ export function CalendarView() {
               Antrean Terjadwal Mendatang
             </h3>
 
-            <div className="space-y-3">
-              <div className="border border-[#EAEAEA] rounded-lg p-3 bg-[#FAFAFA] space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#FEF3C7] text-[#B45309]">
-                    Hari Ini • 19:00 WIB
-                  </span>
-                  <span className="text-[10px] text-neutral-500 font-mono">4 Akun</span>
+            {(() => {
+              const scheduledQueue = contentItems.filter((i) => i.stage === "terjadwal");
+              if (scheduledQueue.length === 0) {
+                return (
+                  <div className="py-6 text-center text-xs text-neutral-400 space-y-2">
+                    <p>Belum ada antrean jadwal konten.</p>
+                    <button
+                      onClick={() => setActivePage("compose")}
+                      className="text-neutral-900 font-medium hover:underline text-[11px]"
+                    >
+                      + Jadwalkan di Composer
+                    </button>
+                  </div>
+                );
+              }
+              return (
+                <div className="space-y-3">
+                  {scheduledQueue.map((item) => (
+                    <div
+                      key={item.id}
+                      className="border border-[#EAEAEA] rounded-lg p-3 bg-[#FAFAFA] space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#FEF3C7] text-[#B45309]">
+                          {item.deadline || "Terjadwal"}
+                        </span>
+                        <span className="text-[10px] text-neutral-500 font-mono">
+                          {item.targetPlatforms?.length || 1} Akun
+                        </span>
+                      </div>
+                      <h4 className="text-xs font-semibold text-neutral-900 leading-snug">
+                        {item.title}
+                      </h4>
+                      <div className="flex items-center justify-between pt-1 text-[11px]">
+                        <span className="text-neutral-500">{item.pillar}</span>
+                        <button
+                          onClick={() => {
+                            setComposerPrefill({
+                              title: item.title,
+                              caption: item.notes || "",
+                              mediaName: item.mediaName,
+                            });
+                            setActivePage("compose");
+                          }}
+                          className="text-neutral-900 font-semibold hover:underline"
+                        >
+                          Buka Composer
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <h4 className="text-xs font-semibold text-neutral-900 leading-snug">
-                  Review Keyboard Low-Profile Logitech MX Mechanical Mini
-                </h4>
-                <div className="flex items-center justify-between pt-1 text-[11px]">
-                  <span className="text-neutral-500">Sponsorship Brand</span>
-                  <button
-                    onClick={() => {
-                      setComposerPrefill({
-                        title: "Review Keyboard Low-Profile Logitech MX Mechanical Mini",
-                        caption: "Keyboard mechanical terbaik untuk coding & desk setup.",
-                        mediaName: "logitech_mx_review.mp4",
-                      });
-                      setActivePage("compose");
-                    }}
-                    className="text-neutral-900 font-semibold hover:underline"
-                  >
-                    Edit / Publish Now
-                  </button>
-                </div>
-              </div>
-
-              <div className="border border-[#EAEAEA] rounded-lg p-3 bg-[#FAFAFA] space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-neutral-200 text-neutral-800">
-                    28 Okt 2026 • 19:00 WIB
-                  </span>
-                  <span className="text-[10px] text-neutral-500 font-mono">YT & IG</span>
-                </div>
-                <h4 className="text-xs font-semibold text-neutral-900 leading-snug">
-                  Next.js 16 Server Actions & Parallel Queue Masterclass
-                </h4>
-                <div className="flex items-center justify-between pt-1 text-[11px]">
-                  <span className="text-neutral-500">Tutorials</span>
-                  <button
-                    onClick={() => showToast("Jadwal tersimpan aktif di background job runner.")}
-                    className="text-neutral-700 hover:text-neutral-900"
-                  >
-                    Atur Slot
-                  </button>
-                </div>
-              </div>
-            </div>
+              );
+            })()}
           </div>
         </div>
       </div>

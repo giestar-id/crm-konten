@@ -112,39 +112,47 @@ export function ContactsView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#EAEAEA]">
-              {contacts.map((contact) => (
-                <tr key={contact.id} className="hover:bg-[#FAFAFA] transition-colors">
-                  <td className="py-3 px-4">
-                    <p className="font-semibold text-neutral-900">{contact.name}</p>
-                    <p className="text-[11px] text-[#737373]">{contact.role}</p>
-                  </td>
-                  <td className="py-3 px-4 font-medium text-neutral-900">
-                    {contact.company}
-                  </td>
-                  <td className="py-3 px-4 text-neutral-600 font-mono text-[11px]">
-                    {contact.email}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                        contact.dealStatus === "Signed"
-                          ? "bg-[#EAF5EE] text-[#2E7D47]"
-                          : contact.dealStatus === "Sponsored"
-                          ? "bg-neutral-100 text-neutral-800"
-                          : "bg-[#FEF3C7] text-[#B45309]"
-                      }`}
-                    >
-                      {contact.dealStatus}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 font-bold text-neutral-900">
-                    ${contact.dealValue.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4 text-neutral-600 text-[11px] max-w-xs truncate">
-                    {contact.linkedContentTitle || "-"}
+              {contacts.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-xs text-neutral-400">
+                    Belum ada mitra brand atau sponsor tersimpan. Klik &ldquo;Tambah Mitra&rdquo; untuk memulai.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                contacts.map((contact) => (
+                  <tr key={contact.id} className="hover:bg-[#FAFAFA] transition-colors">
+                    <td className="py-3 px-4">
+                      <p className="font-semibold text-neutral-900">{contact.name}</p>
+                      <p className="text-[11px] text-[#737373]">{contact.role}</p>
+                    </td>
+                    <td className="py-3 px-4 font-medium text-neutral-900">
+                      {contact.company}
+                    </td>
+                    <td className="py-3 px-4 text-neutral-600 font-mono text-[11px]">
+                      {contact.email}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                          contact.dealStatus === "Signed"
+                            ? "bg-[#EAF5EE] text-[#2E7D47]"
+                            : contact.dealStatus === "Sponsored"
+                            ? "bg-neutral-100 text-neutral-800"
+                            : "bg-[#FEF3C7] text-[#B45309]"
+                        }`}
+                      >
+                        {contact.dealStatus}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 font-bold text-neutral-900">
+                      ${contact.dealValue.toLocaleString()}
+                    </td>
+                    <td className="py-3 px-4 text-neutral-600 text-[11px] max-w-xs truncate">
+                      {contact.linkedContentTitle || "-"}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

@@ -419,6 +419,14 @@ export function PipelineView() {
                   </td>
                 </tr>
               ))}
+
+              {filteredItems.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-xs text-neutral-400">
+                    Belum ada konten pada pipeline. Klik &quot;+ Tambah Konten&quot; di atas untuk memulai.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
