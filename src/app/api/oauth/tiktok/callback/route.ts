@@ -103,7 +103,7 @@ export async function GET(req: NextRequest) {
         access_token: access_token,
         refresh_token: refresh_token || null,
         token_expires_at: new Date(Date.now() + 86400 * 1000).toISOString(),
-        scopes: ["user.info.basic", "video.upload", "video.publish"],
+        scopes: ["user.info.basic", "user.info.profile", "video.upload"],
         status: "active",
         updated_at: new Date().toISOString(),
       },

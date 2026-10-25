@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     .update(codeVerifier)
     .digest("base64url");
 
-  const scopes = ["user.info.basic", "video.upload", "video.publish"].join(",");
+  const scopes = ["user.info.basic", "user.info.profile", "video.upload"].join(",");
 
   const params = new URLSearchParams({
     client_key: clientKey,
