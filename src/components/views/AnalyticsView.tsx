@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 export function AnalyticsView() {
-  const { showToast } = useApp();
+  const { showToast, contentItems } = useApp();
   const [selectedRange, setSelectedRange] = useState("30 Hari Terakhir");
 
   const exportCSV = () => {
@@ -246,61 +246,61 @@ export function AnalyticsView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#EAEAEA]">
-              {[
-                {
-                  title: "5 AI Tools That Save 20 Hours/Week",
-                  pillar: "Tech Reviews",
-                  views: "248.6k",
-                  likes: "19.4k",
-                  shares: "4.8k",
-                  eng: "12.4%",
-                  url: "https://youtube.com/shorts/sph_demo",
-                },
-                {
-                  title: "Tips Menghubungkan 4 Platform Sekaligus dengan 1-Click",
-                  pillar: "Tutorials",
-                  views: "124.5k",
-                  likes: "8.9k",
-                  shares: "2.1k",
-                  eng: "10.2%",
-                  url: "https://youtube.com/shorts/sph_demo_849",
-                },
-                {
-                  title: "Review Keyboard Low-Profile Logitech MX Mechanical Mini",
-                  pillar: "Sponsorships",
-                  views: "98.2k",
-                  likes: "6.4k",
-                  shares: "1.2k",
-                  eng: "8.7%",
-                  url: "https://instagram.com/reel/sph_demo",
-                },
-              ].map((row, i) => (
-                <tr key={i} className="hover:bg-[#FAFAFA] transition-colors">
-                  <td className="py-3 px-4 font-semibold text-neutral-900">
-                    {row.title}
-                  </td>
-                  <td className="py-3 px-4 text-neutral-600">{row.pillar}</td>
-                  <td className="py-3 px-4 font-bold text-neutral-900">{row.views}</td>
-                  <td className="py-3 px-4 text-neutral-700">{row.likes}</td>
-                  <td className="py-3 px-4 text-neutral-700">{row.shares}</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#EAF5EE] text-[#2E7D47]">
-                      {row.eng}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <a
-                      href={row.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-neutral-800 hover:text-neutral-900 font-medium hover:underline"
-                    >
-                      <span>Lihat Post</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </td>
-                </tr>
-              ))}
+              {(() => {
+                const publishedList = contentItems.filter(
+                  (c) => c.stage === "terbit" || c.stage === "dianalisis"
+                );
+                if (publishedList.length === 0) {
+                  return (
+                    <tr>
+                      <td colSpan={7} className="py-6 text-center text-xs text-neutral-400">
+                        Belum ada konten yang diterbitkan. Buat post baru di Composer untuk mulai melacak performa.
+                      </td>
+                    </tr>
+                  );
+                }
+                return publishedList.map((item, i) => {
+                  const views = Number(item.viewsCount) || 0;
+                  const likes = Number(item.likesCount) || 0;
+                  const eng = views > 0 ? `${((likes / views) * 100).toFixed(1)}%` : "0.0%";
+                  const directUrl =
+                    item.publishedUrl || "https://studio.youtube.com";
+
+                  return (
+                    <tr key={item.id || i} className="hover:bg-[#FAFAFA] transition-colors">
+                      <td className="py-3 px-4 font-semibold text-neutral-900 max-w-xs truncate">
+                        {item.title}
+                      </td>
+                      <td className="py-3 px-4 text-neutral-600">{item.pillar}</td>
+                      <td className="py-3 px-4 font-bold text-neutral-900">
+                        {views > 1000 ? `${(views / 1000).toFixed(1)}k` : views}
+                      </td>
+                      <td className="py-3 px-4 text-neutral-700">
+                        {likes > 1000 ? `${(likes / 1000).toFixed(1)}k` : likes}
+                      </td>
+                      <td className="py-3 px-4 text-neutral-700">
+                        {Math.round(likes * 0.25)}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#EAF5EE] text-[#2E7D47]">
+                          {eng}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <a
+                          href={directUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-neutral-800 hover:text-neutral-900 font-medium hover:underline text-xs"
+                        >
+                          <span>Buka Platform</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </td>
+                    </tr>
+                  );
+                });
+              })()}
             </tbody>
           </table>
         </div>

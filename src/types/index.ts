@@ -39,7 +39,7 @@ export interface SocialAccount {
   handle: string;
   avatarUrl: string;
   accountType: string;
-  status: 'active' | 'reauth_required';
+  status: 'active' | 'reauth_required' | 'disconnected';
   apiQuotaUsed?: number;
   apiQuotaMax?: number;
   tokenExpiresIn?: string;

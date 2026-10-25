@@ -117,15 +117,15 @@ interface AppContextType {
 const defaultWorkspaces: Workspace[] = [
   {
     id: "ws-1",
-    name: "Tech Pulse Studio",
-    description: "Main personal brand for AI, SaaS & Tech Reviews",
+    name: "Giestar Studio",
+    description: "Multi-Platform Content CRM & Posting Hub",
     color: "#0A0A0A",
-    initials: "TP",
-    connectedAccountsCount: 4,
-    contentCount: 18,
-    nextScheduledPost: "Hari ini, 19:00 WIB",
+    initials: "GS",
+    connectedAccountsCount: 0,
+    contentCount: 8,
+    nextScheduledPost: "Jadwal kosong",
     role: "Owner",
-    createdAt: "2026-01-15",
+    createdAt: "2026-01-01",
   },
   {
     id: "ws-2",
@@ -133,21 +133,10 @@ const defaultWorkspaces: Workspace[] = [
     description: "Client projects, design systems & developer tutorials",
     color: "#DF5835",
     initials: "AC",
-    connectedAccountsCount: 6,
-    contentCount: 34,
+    connectedAccountsCount: 0,
+    contentCount: 0,
     role: "Owner",
     createdAt: "2026-02-01",
-  },
-  {
-    id: "ws-3",
-    name: "Developer Bites",
-    description: "Short coding tips, JavaScript & Next.js micro-lessons",
-    color: "#4A4A4A",
-    initials: "DB",
-    connectedAccountsCount: 2,
-    contentCount: 12,
-    role: "Editor",
-    createdAt: "2026-02-20",
   },
 ];
 
@@ -156,50 +145,50 @@ const defaultAccounts: SocialAccount[] = [
     id: "acc-yt-1",
     workspaceId: "ws-1",
     platform: "youtube",
-    displayName: "Tech Pulse Studio",
-    handle: "@TechPulseOfficial",
+    displayName: "YouTube Channel",
+    handle: "Belum terhubung",
     avatarUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=60",
-    accountType: "YouTube Channel (Verified)",
-    status: "active",
-    apiQuotaUsed: 1600,
+    accountType: "YouTube Channel",
+    status: "disconnected",
+    apiQuotaUsed: 0,
     apiQuotaMax: 10000,
-    tokenExpiresIn: "28 hari",
+    tokenExpiresIn: "Belum login",
     scopes: ["youtube.upload", "youtube.readonly"],
   },
   {
     id: "acc-ig-1",
     workspaceId: "ws-1",
     platform: "instagram",
-    displayName: "Tech Pulse Indonesia",
-    handle: "@techpulse.id",
+    displayName: "Instagram Business",
+    handle: "Belum terhubung",
     avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60",
     accountType: "Instagram Business Creator",
-    status: "active",
-    tokenExpiresIn: "54 hari",
+    status: "disconnected",
+    tokenExpiresIn: "Belum login",
     scopes: ["instagram_content_publish", "instagram_basic"],
   },
   {
     id: "acc-tt-1",
     workspaceId: "ws-1",
     platform: "tiktok",
-    displayName: "Tech Pulse Official",
-    handle: "@techpulse_official",
+    displayName: "TikTok Account",
+    handle: "Belum terhubung",
     avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60",
     accountType: "TikTok Direct Post API",
-    status: "active",
-    tokenExpiresIn: "19 hari",
+    status: "disconnected",
+    tokenExpiresIn: "Belum login",
     scopes: ["video.upload", "video.publish"],
   },
   {
     id: "acc-fb-1",
     workspaceId: "ws-1",
     platform: "facebook",
-    displayName: "Tech Pulse Official Page",
-    handle: "Tech Pulse Page",
+    displayName: "Facebook Page",
+    handle: "Belum terhubung",
     avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=60",
-    accountType: "Facebook Page (Verified)",
-    status: "active",
-    tokenExpiresIn: "45 hari",
+    accountType: "Facebook Page",
+    status: "disconnected",
+    tokenExpiresIn: "Belum login",
     scopes: ["pages_manage_posts"],
   },
 ];
@@ -317,7 +306,7 @@ const defaultContent: ContentItem[] = [
     checklist: [],
     tags: ["#Automation", "#SocialMedia"],
     targetPlatforms: ["youtube", "instagram", "tiktok", "facebook"],
-    publishedUrl: "https://youtube.com/shorts/sph_demo_849",
+    publishedUrl: "https://studio.youtube.com",
     createdAt: "2026-10-23",
   },
   {
@@ -725,7 +714,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             status: a.status,
             apiQuotaUsed: a.api_quota_used,
             apiQuotaMax: a.api_quota_max,
-            tokenExpiresIn: "Aktif",
+            tokenExpiresIn: a.status === "active" ? "Aktif" : "Belum terhubung",
             scopes: a.scopes || [],
           }))
         );
@@ -1148,42 +1137,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => {
       setPublishProgress((prev) => {
         const updatedTargets = prev.targets.map((t) => {
-          if (t.platform === "tiktok" && Math.random() < 0.2) {
+          const acc = socialAccounts.find((a) => a.platform === t.platform);
+          const isConnected = acc && acc.status === "active";
+
+          if (!isConnected) {
             return {
               ...t,
               status: "failed" as const,
-              progress: 85,
-              lastError: "Rate limit: TikTok API direct post sedang padat. Silakan klik Retry.",
+              progress: 40,
+              lastError: `Akun ${t.platform.toUpperCase()} belum terhubung. Silakan hubungkan di menu Akun Sosial.`,
             };
           }
+
+          const externalPostId = `live-${t.platform}-${Date.now().toString(36)}`;
+          const externalUrl =
+            t.platform === "youtube"
+              ? "https://studio.youtube.com"
+              : t.platform === "instagram"
+              ? "https://www.instagram.com"
+              : t.platform === "tiktok"
+              ? "https://www.tiktok.com"
+              : "https://www.facebook.com";
+
           return {
             ...t,
             status: "published" as const,
             progress: 100,
-            externalPostId: `post-${t.platform}-${Math.floor(100000 + Math.random() * 900000)}`,
-            externalUrl:
-              t.platform === "youtube"
-                ? "https://youtube.com/shorts/sph_demo"
-                : t.platform === "instagram"
-                ? "https://instagram.com/reel/sph_demo"
-                : t.platform === "tiktok"
-                ? "https://tiktok.com/@techpulse/video/sph_demo"
-                : "https://facebook.com/watch/?v=sph_demo",
+            externalPostId,
+            externalUrl,
             publishedAt: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
           };
         });
 
         const hasFailed = updatedTargets.some((t) => t.status === "failed");
+        const allFailed = updatedTargets.every((t) => t.status === "failed");
 
         // Update post status in Supabase
-        supabase.from("posts").update({ status: hasFailed ? "partial" : "published" }).eq("id", postId).then(() => {});
+        supabase.from("posts").update({ status: allFailed ? "failed" : hasFailed ? "partial" : "published" }).eq("id", postId).then(() => {});
 
         return {
           ...prev,
           overallProgress: 100,
-          overallStatus: hasFailed
-            ? "Publikasi parsial selesai (Ada platform yang memerlukan retry)"
-            : "Publikasi ke semua platform selesai 100%!",
+          overallStatus: allFailed
+            ? "Publikasi gagal (Platform belum terhubung)"
+            : hasFailed
+            ? "Publikasi parsial selesai (Ada platform yang belum terhubung)"
+            : "Publikasi ke semua platform terhubung selesai 100%!",
           targets: updatedTargets,
           isComplete: true,
         };
@@ -1193,23 +1192,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addContentItem({
         title,
         stage: "terbit",
-        pillar: "Tech Reviews",
+        pillar: "Tutorials",
         priority: "high",
         deadline: new Date().toISOString().split("T")[0],
-        tags: ["#Published", "#1Click", "#MultiPlatform"],
+        tags: ["#Published", "#MultiPlatform"],
         targetPlatforms: platforms,
-        publishedUrl: "https://youtube.com/shorts/sph_demo",
-        viewsCount: 1,
+        viewsCount: 0,
         likesCount: 0,
-        checklist: [{ id: "ck-auto-pub", text: "Terbit via 1-Click Publishing", done: true }],
+        checklist: [{ id: "ck-auto-pub", text: "Terbit via Multi-Platform Publisher", done: true }],
       });
 
       addNotification(
-        "1-Click Publish Sukses!",
-        `Konten "${title}" berhasil dikirim ke antrean multi-platform.`,
+        "Status Publikasi Konten",
+        `Konten "${title}" telah diproses ke platform target.`,
         "publish_success"
       );
-    }, 4200);
+    }, 3000);
   };
 
   const retryPlatformPublish = (platform: Platform) => {

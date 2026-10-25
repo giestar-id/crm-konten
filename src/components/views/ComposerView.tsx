@@ -28,21 +28,13 @@ export function ComposerView() {
     composerPrefill,
     setComposerPrefill,
     setActivePage,
+    socialAccounts,
   } = useApp();
 
   // Base Form State
-  const [title, setTitle] = useState(
-    "5 AI Tools That Save 20 Hours/Week (Solo Creator Edition)"
-  );
-  const [caption, setCaption] = useState(
-    "Kerja 20 jam lebih hemat tiap minggu cuma pakai 5 tools AI ini. Dari riset ide, script otomatis, sampai auto-caption. Simak sampai tuntas!"
-  );
-  const [selectedTags, setSelectedTags] = useState<string[]>([
-    "#AITools",
-    "#SoloCreator",
-    "#Productivity",
-    "#CreatorEconomy",
-  ]);
+  const [title, setTitle] = useState("");
+  const [caption, setCaption] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [newTagInput, setNewTagInput] = useState("");
 
   // Media File State
@@ -51,13 +43,9 @@ export function ComposerView() {
     size: string;
     duration: string;
     aspectRatio: "9:16" | "16:9";
-  } | null>({
-    name: "ai_tools_2026.mp4",
-    size: "48.2 MB",
-    duration: "0:54",
-    aspectRatio: "9:16",
-  });
-  const [uploadProgress, setUploadProgress] = useState(100);
+    previewUrl?: string;
+  } | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
 
   // Platform Targets
@@ -72,7 +60,7 @@ export function ComposerView() {
   const [showOverrides, setShowOverrides] = useState(false);
   const [overrides, setOverrides] = useState<Record<Platform, PlatformOverrides>>({
     youtube: {
-      title: "5 AI Tools Yang Menghemat 20 Jam/Minggu untuk Solo Creator!",
+      title: "",
       caption: "",
       privacy: "public",
       category: "Science & Technology",
@@ -108,7 +96,7 @@ export function ComposerView() {
       if (composerPrefill.mediaName) {
         setMediaFile({
           name: composerPrefill.mediaName,
-          size: "52.4 MB",
+          size: "Video Lampiran",
           duration: "0:58",
           aspectRatio: "9:16",
         });
@@ -123,28 +111,46 @@ export function ComposerView() {
     );
   };
 
-  const handleSimulateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setIsUploading(true);
-      setUploadProgress(15);
-      const interval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setIsUploading(false);
-            setMediaFile({
-              name: file.name,
-              size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-              duration: "0:50",
-              aspectRatio: "9:16",
-            });
-            showToast("Video berhasil diunggah (TUS Resumable Chunked).");
-            return 100;
-          }
-          return prev + 25;
+      setUploadProgress(40);
+
+      const previewUrl = URL.createObjectURL(file);
+      const tempVideo = document.createElement("video");
+      tempVideo.preload = "metadata";
+      tempVideo.onloadedmetadata = () => {
+        const durationSec = Math.round(tempVideo.duration) || 0;
+        const mins = Math.floor(durationSec / 60);
+        const secs = durationSec % 60;
+        const durationStr = `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+        const isVertical = tempVideo.videoWidth < tempVideo.videoHeight;
+        const ratio: "9:16" | "16:9" = isVertical ? "9:16" : "16:9";
+
+        setMediaFile({
+          name: file.name,
+          size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+          duration: durationStr,
+          aspectRatio: ratio,
+          previewUrl,
         });
-      }, 300);
+        setUploadProgress(100);
+        setIsUploading(false);
+        showToast(`Video "${file.name}" siap (${ratio}, durasi ${durationStr}).`);
+      };
+      tempVideo.onerror = () => {
+        setMediaFile({
+          name: file.name,
+          size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+          duration: "--:--",
+          aspectRatio: "9:16",
+          previewUrl,
+        });
+        setUploadProgress(100);
+        setIsUploading(false);
+      };
+      tempVideo.src = previewUrl;
     }
   };
 
@@ -259,34 +265,46 @@ export function ComposerView() {
             </div>
 
             {mediaFile ? (
-              <div className="border border-[#EAEAEA] rounded-lg p-3.5 bg-[#FAFAFA] flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-[#0A0A0A] text-white flex items-center justify-center shrink-0">
-                    <Film className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-neutral-900">
-                      {mediaFile.name}
-                    </p>
-                    <div className="flex items-center gap-2 text-[11px] text-[#737373] mt-0.5">
-                      <span>{mediaFile.size}</span>
-                      <span>•</span>
-                      <span>Durasi: {mediaFile.duration}</span>
-                      <span>•</span>
-                      <span className="px-1.5 py-0.2 rounded bg-neutral-200 text-neutral-800 font-mono text-[10px]">
-                        {mediaFile.aspectRatio}
-                      </span>
+              <div className="space-y-3">
+                <div className="border border-[#EAEAEA] rounded-lg p-3.5 bg-[#FAFAFA] flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-[#0A0A0A] text-white flex items-center justify-center shrink-0">
+                      <Film className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-neutral-900 truncate max-w-[280px]">
+                        {mediaFile.name}
+                      </p>
+                      <div className="flex items-center gap-2 text-[11px] text-[#737373] mt-0.5">
+                        <span>{mediaFile.size}</span>
+                        <span>•</span>
+                        <span>Durasi: {mediaFile.duration}</span>
+                        <span>•</span>
+                        <span className="px-1.5 py-0.2 rounded bg-neutral-200 text-neutral-800 font-mono text-[10px]">
+                          {mediaFile.aspectRatio}
+                        </span>
+                      </div>
                     </div>
                   </div>
+
+                  <button
+                    onClick={() => setMediaFile(null)}
+                    className="p-1 rounded text-neutral-400 hover:text-neutral-700"
+                    title="Ganti Video"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
 
-                <button
-                  onClick={() => setMediaFile(null)}
-                  className="p-1 rounded text-neutral-400 hover:text-neutral-700"
-                  title="Ganti Video"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                {mediaFile.previewUrl && (
+                  <div className="rounded-xl overflow-hidden border border-[#EAEAEA] bg-black max-h-[260px] flex items-center justify-center">
+                    <video
+                      src={mediaFile.previewUrl}
+                      controls
+                      className="max-h-[260px] w-auto mx-auto"
+                    />
+                  </div>
+                )}
               </div>
             ) : (
               <label className="border-2 border-dashed border-[#D4D4D4] rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-neutral-900 transition-colors bg-[#FAFAFA]">
@@ -295,12 +313,12 @@ export function ComposerView() {
                   Drag & drop video di sini, atau klik untuk memilih file
                 </p>
                 <p className="text-[11px] text-[#737373] mt-1">
-                  Mendukung MP4, MOV (hingga 500MB). TUS Resumable Upload aktif.
+                  Mendukung MP4, MOV (hingga 500MB). Pemutaran preview langsung aktif.
                 </p>
                 <input
                   type="file"
                   accept="video/*"
-                  onChange={handleSimulateUpload}
+                  onChange={handleFileUpload}
                   className="hidden"
                 />
               </label>
@@ -517,7 +535,7 @@ export function ComposerView() {
                       TikTok Content Posting API
                     </span>
                     <span className="text-[10px] px-2 py-0.5 rounded bg-neutral-100 text-neutral-700">
-                      Target: @techpulse_official
+                      Target: {socialAccounts.find((a) => a.platform === "tiktok")?.handle || "TikTok"}
                     </span>
                   </div>
                   <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-800">
@@ -631,29 +649,30 @@ export function ComposerView() {
                 {
                   id: "youtube" as Platform,
                   name: "YouTube Shorts & Video",
-                  account: "Tech Pulse Studio (@TechPulseOfficial)",
-                  quota: "8,400 / 10,000 unit sisa",
                 },
                 {
                   id: "instagram" as Platform,
                   name: "Instagram Reels",
-                  account: "Tech Pulse Indonesia (@techpulse.id)",
-                  quota: "Business Creator Active",
                 },
                 {
                   id: "tiktok" as Platform,
                   name: "TikTok Video",
-                  account: "Tech Pulse Official (@techpulse_official)",
-                  quota: "Direct Post API Enabled",
                 },
                 {
                   id: "facebook" as Platform,
                   name: "Facebook Page Video",
-                  account: "Tech Pulse Official Page (Page Token)",
-                  quota: "Verified Page Active",
                 },
               ].map((plat) => {
                 const isChecked = selectedPlatforms.includes(plat.id);
+                const acc = socialAccounts.find((a) => a.platform === plat.id);
+                const isConnected = acc && acc.status === "active";
+                const accountDisplay = isConnected
+                  ? `${acc.displayName} (${acc.handle})`
+                  : "Belum terhubung";
+                const quotaDisplay = isConnected
+                  ? "Terhubung"
+                  : "Perlu koneksi";
+
                 return (
                   <div
                     key={plat.id}
@@ -677,12 +696,18 @@ export function ComposerView() {
                           {plat.name}
                         </p>
                         <p className="text-[11px] text-[#737373] mt-0.5 truncate max-w-[200px]">
-                          {plat.account}
+                          {accountDisplay}
                         </p>
                       </div>
                     </div>
-                    <span className="text-[10px] text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
-                      {plat.quota}
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded font-medium ${
+                        isConnected
+                          ? "bg-[#EAF5EE] text-[#2E7D47]"
+                          : "bg-neutral-100 text-neutral-500"
+                      }`}
+                    >
+                      {quotaDisplay}
                     </span>
                   </div>
                 );

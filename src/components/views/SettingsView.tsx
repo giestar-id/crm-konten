@@ -15,10 +15,12 @@ import {
 } from "lucide-react";
 
 export function SettingsView() {
-  const { activeWorkspace, showToast } = useApp();
+  const { activeWorkspace, showToast, user } = useApp();
 
-  const [creatorName, setCreatorName] = useState("Aji Subekti");
-  const [email, setEmail] = useState("aji@creators.id");
+  const [creatorName, setCreatorName] = useState(
+    user?.user_metadata?.full_name || "Aji Subekti"
+  );
+  const [email, setEmail] = useState(user?.email || "asa001991@gmail.com");
   const [timezone, setTimezone] = useState("Asia/Jakarta (WIB - UTC+7)");
   const [autoRetry, setAutoRetry] = useState(true);
   const [inngestConnected, setInngestConnected] = useState(true);

@@ -156,18 +156,18 @@ export function AccountsView() {
                   {isActive ? (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium bg-[#EAF5EE] text-[#2E7D47]">
                       <CheckCircle2 className="w-3 h-3" />
-                      <span>Ready</span>
+                      <span>Terhubung</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium bg-[#FEF3C7] text-[#B45309]">
                       <AlertTriangle className="w-3 h-3" />
-                      <span>Belum Login</span>
+                      <span>Belum Terhubung</span>
                     </span>
                   )}
                 </div>
 
                 {/* API Quota if YouTube */}
-                {acc.apiQuotaMax && (
+                {acc.apiQuotaMax && isActive && (
                   <div className="p-3 bg-[#FAFAFA] rounded-lg border border-[#EAEAEA] space-y-1.5 mt-3">
                     <div className="flex justify-between text-xs">
                       <span className="text-neutral-700 font-medium">
@@ -189,7 +189,7 @@ export function AccountsView() {
                 )}
               </div>
 
-              {/* Bottom Actions: Login Asli Real OAuth button per platform */}
+              {/* Bottom Actions: Real OAuth button per platform */}
               <div className="pt-3 border-t border-[#EAEAEA] flex items-center justify-between">
                 <span className="text-[11px] text-[#737373]">
                   OAuth 2.0 Direct
@@ -199,8 +199,7 @@ export function AccountsView() {
                   onClick={() => handleConnectOAuth(acc.platform)}
                   className="px-3 py-1.5 rounded-lg bg-[#0A0A0A] text-white text-xs font-semibold hover:bg-neutral-800 transition-colors flex items-center gap-1.5 shadow-sm"
                 >
-                  <Sparkles className="w-3 h-3" />
-                  <span>Login ke {acc.platform.toUpperCase()} Asli</span>
+                  <span>{isActive ? "Hubungkan Ulang" : `Hubungkan ${acc.platform.toUpperCase()}`}</span>
                   <ArrowRight className="w-3 h-3" />
                 </button>
               </div>

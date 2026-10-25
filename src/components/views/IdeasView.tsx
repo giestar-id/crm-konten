@@ -101,7 +101,6 @@ export function IdeasView() {
     setComposerPrefill({
       title: aiResult.youtubeTitle,
       caption: aiResult.captionIG,
-      mediaName: "ai_tools_2026.mp4",
     });
     setActivePage("compose");
   };

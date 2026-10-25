@@ -567,7 +567,7 @@ export function DashboardView() {
                     setComposerPrefill({
                       title: readyItem.title,
                       caption: readyItem.notes || "",
-                      mediaName: readyItem.mediaName || "ai_tools_2026.mp4",
+                      mediaName: readyItem.mediaName,
                     });
                   }
                   setActivePage("compose");
