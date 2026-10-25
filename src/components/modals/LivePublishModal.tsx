@@ -3,6 +3,7 @@
 import React from "react";
 import { useApp } from "@/context/AppContext";
 import { Platform } from "@/types";
+import { PlatformLogo } from "@/components/common/PlatformIcons";
 import {
   X,
   CheckCircle2,
@@ -45,7 +46,7 @@ export function LivePublishModal() {
               Publishing &ldquo;{publishProgress.jobTitle}&rdquo;
             </h3>
             <p className="text-xs text-[#737373] mt-0.5">
-              Mengunggah file sekali dan mendistribusikan ke 4 platform secara simultan
+              Mengunggah file sekali dan mendistribusikan ke akun terpilih secara simultan
             </p>
           </div>
           <button
@@ -83,14 +84,16 @@ export function LivePublishModal() {
             const info = platformIcons[target.platform];
             return (
               <div
-                key={target.platform}
+                key={target.accountId || target.platform}
                 className="border border-[#EAEAEA] rounded-xl p-3.5 bg-[#FAFAFA] flex flex-col gap-2 transition-all"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#0A0A0A]" />
+                    <div className="w-6 h-6 rounded-md bg-white border border-[#EAEAEA] flex items-center justify-center">
+                      <PlatformLogo platform={target.platform} className="w-4 h-4" />
+                    </div>
                     <span className="text-xs font-semibold text-neutral-900">
-                      {info.name}
+                      {target.accountName || info.name}
                     </span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-200/60 text-neutral-700 font-medium">
                       {info.badge}

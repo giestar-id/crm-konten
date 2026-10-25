@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useApp } from "@/context/AppContext";
 import { Platform, PlatformOverrides } from "@/types";
+import { PlatformLogo } from "@/components/common/PlatformIcons";
 import {
   UploadCloud,
   Film,
@@ -48,13 +49,39 @@ export function ComposerView() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Platform Targets
-  const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>([
-    "youtube",
-    "instagram",
-    "tiktok",
-    "facebook",
-  ]);
+  // Target Accounts Selection
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>(() =>
+    socialAccounts.map((a) => a.id)
+  );
+
+  const selectedPlatforms = Array.from(
+    new Set(
+      socialAccounts
+        .filter((a) => selectedAccountIds.includes(a.id))
+        .map((a) => a.platform)
+    )
+  );
+
+  const toggleAccount = (accId: string) => {
+    setSelectedAccountIds((prev) =>
+      prev.includes(accId)
+        ? prev.filter((id) => id !== accId)
+        : [...prev, accId]
+    );
+  };
+
+  const togglePlatform = (platform: Platform) => {
+    const accs = socialAccounts.filter((a) => a.platform === platform);
+    const allSelected = accs.every((a) => selectedAccountIds.includes(a.id));
+    if (allSelected) {
+      setSelectedAccountIds((prev) =>
+        prev.filter((id) => !accs.some((a) => a.id === id))
+      );
+    } else {
+      const toAdd = accs.map((a) => a.id);
+      setSelectedAccountIds((prev) => Array.from(new Set([...prev, ...toAdd])));
+    }
+  };
 
   // Per-Platform Overrides State
   const [showOverrides, setShowOverrides] = useState(false);
@@ -104,12 +131,6 @@ export function ComposerView() {
       setComposerPrefill(null);
     }
   }, [composerPrefill, setComposerPrefill]);
-
-  const togglePlatform = (p: Platform) => {
-    setSelectedPlatforms((prev) =>
-      prev.includes(p) ? prev.filter((item) => item !== p) : [...prev, p]
-    );
-  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -166,8 +187,8 @@ export function ComposerView() {
   };
 
   const handlePublishNow = () => {
-    if (selectedPlatforms.length === 0) {
-      showToast("Pilih minimal satu platform tujuan publikasi.");
+    if (selectedAccountIds.length === 0) {
+      showToast("Pilih minimal satu akun/channel tujuan publikasi.");
       return;
     }
     if (!title.trim()) {
@@ -180,7 +201,8 @@ export function ComposerView() {
       caption,
       selectedPlatforms,
       mediaFile ? mediaFile.name : "unattached_video.mp4",
-      overrides
+      overrides,
+      selectedAccountIds
     );
   };
 
@@ -623,95 +645,97 @@ export function ComposerView() {
 
         {/* RIGHT COLUMN: Destination Platforms & Publishing CTA (5 Cols) */}
         <div className="lg:col-span-5 space-y-5">
-          {/* Target Platforms Checkboxes */}
+          {/* Target Accounts & Platforms Checkboxes */}
           <div className="border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-neutral-900">
-                Pilih Platform Tujuan ({selectedPlatforms.length}/4)
-              </span>
+              <div>
+                <span className="text-xs font-semibold text-neutral-900 block">
+                  Pilih Akun Tujuan ({selectedAccountIds.length}/{socialAccounts.length})
+                </span>
+                <span className="text-[11px] text-[#737373]">
+                  Pilih akun spesifik yang ingin diposting
+                </span>
+              </div>
               <button
-                onClick={() =>
-                  setSelectedPlatforms([
-                    "youtube",
-                    "instagram",
-                    "tiktok",
-                    "facebook",
-                  ])
-                }
+                type="button"
+                onClick={() => {
+                  if (selectedAccountIds.length === socialAccounts.length) {
+                    setSelectedAccountIds([]);
+                  } else {
+                    setSelectedAccountIds(socialAccounts.map((a) => a.id));
+                  }
+                }}
                 className="text-[11px] text-neutral-600 hover:text-neutral-900 font-medium"
               >
-                Pilih Semua
+                {selectedAccountIds.length === socialAccounts.length
+                  ? "Batal Semua"
+                  : "Pilih Semua"}
               </button>
             </div>
 
             <div className="space-y-2.5">
-              {[
-                {
-                  id: "youtube" as Platform,
-                  name: "YouTube Shorts & Video",
-                },
-                {
-                  id: "instagram" as Platform,
-                  name: "Instagram Reels",
-                },
-                {
-                  id: "tiktok" as Platform,
-                  name: "TikTok Video",
-                },
-                {
-                  id: "facebook" as Platform,
-                  name: "Facebook Page Video",
-                },
-              ].map((plat) => {
-                const isChecked = selectedPlatforms.includes(plat.id);
-                const acc = socialAccounts.find((a) => a.platform === plat.id);
-                const isConnected = acc && acc.status === "active";
-                const accountDisplay = isConnected
-                  ? `${acc.displayName} (${acc.handle})`
-                  : "Belum terhubung";
-                const quotaDisplay = isConnected
-                  ? "Terhubung"
-                  : "Perlu koneksi";
+              {socialAccounts.map((acc) => {
+                const isChecked = selectedAccountIds.includes(acc.id);
+                const isConnected = acc.status === "active";
 
                 return (
                   <div
-                    key={plat.id}
-                    onClick={() => togglePlatform(plat.id)}
+                    key={acc.id}
+                    onClick={() => toggleAccount(acc.id)}
                     className={`border rounded-xl p-3 flex items-center justify-between cursor-pointer transition-colors ${
                       isChecked
                         ? "border-neutral-900 bg-[#FAFAFA]"
-                        : "border-[#EAEAEA] bg-white opacity-75 hover:opacity-100"
+                        : "border-[#EAEAEA] bg-white opacity-70 hover:opacity-100"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className={`w-5 h-5 rounded flex items-center justify-center text-white text-xs ${
+                        className={`w-5 h-5 rounded flex items-center justify-center text-white text-xs shrink-0 ${
                           isChecked ? "bg-[#0A0A0A]" : "border border-neutral-300"
                         }`}
                       >
                         {isChecked && <Check className="w-3.5 h-3.5" />}
                       </div>
-                      <div>
-                        <p className="text-xs font-semibold text-neutral-900">
-                          {plat.name}
+
+                      <div className="w-7 h-7 rounded-lg bg-white border border-[#EAEAEA] flex items-center justify-center shrink-0">
+                        <PlatformLogo platform={acc.platform} className="w-4 h-4" />
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-neutral-900 truncate">
+                          {acc.displayName}
                         </p>
-                        <p className="text-[11px] text-[#737373] mt-0.5 truncate max-w-[200px]">
-                          {accountDisplay}
+                        <p className="text-[11px] text-[#737373] truncate">
+                          {acc.handle}
                         </p>
                       </div>
                     </div>
+
                     <span
-                      className={`text-[10px] px-2 py-0.5 rounded font-medium ${
+                      className={`text-[10px] px-2 py-0.5 rounded font-medium shrink-0 ml-2 ${
                         isConnected
                           ? "bg-[#EAF5EE] text-[#2E7D47]"
                           : "bg-neutral-100 text-neutral-500"
                       }`}
                     >
-                      {quotaDisplay}
+                      {isConnected ? "Terhubung" : "Perlu koneksi"}
                     </span>
                   </div>
                 );
               })}
+            </div>
+
+            <div className="pt-2 border-t border-[#EAEAEA] flex justify-between items-center text-xs">
+              <span className="text-[11px] text-[#737373]">
+                Ingin tambah akun lain?
+              </span>
+              <button
+                type="button"
+                onClick={() => setActivePage("accounts")}
+                className="text-[11px] font-semibold text-neutral-900 hover:underline"
+              >
+                + Kelola Akun
+              </button>
             </div>
           </div>
 
@@ -804,7 +828,7 @@ export function ComposerView() {
                   className="w-full py-3 rounded-xl bg-[#0A0A0A] text-white text-xs font-semibold hover:bg-neutral-800 transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
                 >
                   <Sparkles className="w-4 h-4 text-white" />
-                  <span>Publish Now ke {selectedPlatforms.length} Platform</span>
+                  <span>Publish Now ke {selectedAccountIds.length} Akun Terpilih</span>
                 </button>
               </div>
             )}

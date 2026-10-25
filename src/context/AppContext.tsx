@@ -47,6 +47,13 @@ interface AppContextType {
   socialAccounts: SocialAccount[];
   toggleAccountStatus: (id: string) => Promise<void>;
   reconnectAccount: (id: string) => Promise<void>;
+  disconnectAccount: (id: string) => Promise<void>;
+  addSocialAccount: (acc: {
+    platform: Platform;
+    displayName: string;
+    handle: string;
+    avatarUrl?: string;
+  }) => Promise<void>;
 
   // Pipeline Content Items
   contentItems: ContentItem[];
@@ -82,7 +89,8 @@ interface AppContextType {
     caption: string,
     platforms: Platform[],
     mediaName: string,
-    overrides?: Record<Platform, any>
+    overrides?: Record<Platform, any>,
+    targetAccountIds?: string[]
   ) => void;
   retryPlatformPublish: (platform: Platform) => void;
   closePublishModal: () => void;
@@ -1046,11 +1054,75 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ? {
               ...acc,
               status: "active",
-              tokenExpiresIn: "60 hari (Refreshed)",
+              tokenExpiresIn: "Aktif",
             }
           : acc
       )
     );
+  };
+
+  const disconnectAccount = async (id: string) => {
+    setSocialAccounts((prev) =>
+      prev.map((acc) =>
+        acc.id === id
+          ? {
+              ...acc,
+              status: "disconnected" as const,
+              handle: "Belum terhubung",
+              tokenExpiresIn: "Belum login",
+            }
+          : acc
+      )
+    );
+    try {
+      await supabase
+        .from("social_accounts")
+        .update({ status: "disconnected", access_token: null })
+        .eq("id", id);
+    } catch {
+      // ignore
+    }
+    showToast("Koneksi akun berhasil diputuskan.");
+  };
+
+  const addSocialAccount = async (acc: {
+    platform: Platform;
+    displayName: string;
+    handle: string;
+    avatarUrl?: string;
+  }) => {
+    const newId = `acc-${acc.platform}-${Date.now().toString(36)}`;
+    const newAcc: SocialAccount = {
+      id: newId,
+      workspaceId: activeWorkspace.id,
+      platform: acc.platform,
+      displayName: acc.displayName,
+      handle: acc.handle.startsWith("@") ? acc.handle : `@${acc.handle}`,
+      avatarUrl:
+        acc.avatarUrl ||
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60",
+      accountType: `${acc.platform.toUpperCase()} Channel`,
+      status: "active",
+      tokenExpiresIn: "Aktif",
+      scopes: [],
+    };
+    setSocialAccounts((prev) => [...prev, newAcc]);
+    try {
+      await supabase.from("social_accounts").insert({
+        id: newId,
+        workspace_id: activeWorkspace.id,
+        platform: acc.platform,
+        display_name: acc.displayName,
+        handle: newAcc.handle,
+        avatar_url: newAcc.avatarUrl,
+        account_type: newAcc.accountType,
+        status: "active",
+        scopes: [],
+      });
+    } catch {
+      // ignore
+    }
+    showToast(`Akun ${acc.displayName} (${acc.platform.toUpperCase()}) berhasil ditambahkan!`);
   };
 
   // 1-Click Publishing Runner (With Supabase Posts & Targets Records)
@@ -1059,22 +1131,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     caption: string,
     platforms: Platform[],
     mediaName: string,
-    overrides?: Record<Platform, any>
+    overrides?: Record<Platform, any>,
+    targetAccountIds?: string[]
   ) => {
     const idempotencyKey = `sph-job-${Math.random().toString(36).substring(2, 8)}-${Date.now().toString(36)}`;
     const postId = `post-${Date.now()}`;
 
-    const targets: PostTarget[] = platforms.map((p) => {
-      const acc = socialAccounts.find((a) => a.platform === p);
-      return {
-        platform: p,
-        accountId: acc?.id || `acc-${p}`,
-        accountName: acc?.displayName || p.toUpperCase(),
-        status: "queued",
-        progress: 10,
-        overrides: overrides?.[p],
-      };
-    });
+    const targets: PostTarget[] =
+      targetAccountIds && targetAccountIds.length > 0
+        ? targetAccountIds.map((accId) => {
+            const acc = socialAccounts.find((a) => a.id === accId);
+            const p = acc?.platform || "youtube";
+            return {
+              platform: p,
+              accountId: accId,
+              accountName: acc ? `${acc.displayName} (${acc.handle})` : p.toUpperCase(),
+              status: "queued" as const,
+              progress: 10,
+              overrides: overrides?.[p],
+            };
+          })
+        : platforms.map((p) => {
+            const acc = socialAccounts.find((a) => a.platform === p);
+            return {
+              platform: p,
+              accountId: acc?.id || `acc-${p}`,
+              accountName: acc?.displayName || p.toUpperCase(),
+              status: "queued" as const,
+              progress: 10,
+              overrides: overrides?.[p],
+            };
+          });
+
+    const targetCount = targets.length;
 
     setPublishProgress({
       isOpen: true,
@@ -1082,7 +1171,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       idempotencyKey,
       targets,
       overallProgress: 15,
-      overallStatus: `Menginisialisasi ${platforms.length} antrean paralel...`,
+      overallStatus: `Menginisialisasi ${targetCount} antrean paralel...`,
       isComplete: false,
     });
 
@@ -1126,7 +1215,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => {
       setPublishProgress((prev) => {
         const updatedTargets = prev.targets.map((t) => {
-          const acc = socialAccounts.find((a) => a.platform === t.platform);
+          const acc =
+            socialAccounts.find((a) => a.id === t.accountId) ||
+            socialAccounts.find((a) => a.platform === t.platform);
           const isConnected = acc && acc.status === "active";
 
           if (!isConnected) {
@@ -1134,7 +1225,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               ...t,
               status: "failed" as const,
               progress: 40,
-              lastError: `Akun ${t.platform.toUpperCase()} belum terhubung. Silakan hubungkan di menu Akun Sosial.`,
+              lastError: `Akun ${t.accountName} belum terhubung. Silakan hubungkan di menu Akun Sosial.`,
             };
           }
 
@@ -1248,6 +1339,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         socialAccounts,
         toggleAccountStatus,
         reconnectAccount,
+        disconnectAccount,
+        addSocialAccount,
         contentItems,
         addContentItem,
         updateContentStage,
