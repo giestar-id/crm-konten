@@ -152,109 +152,168 @@ export function AnalyticsView() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Retention Curve Chart (7 Cols) */}
-        <div className="lg:col-span-7 border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm flex flex-col justify-between">
+        <div className="lg:col-span-7 border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm flex flex-col justify-between min-h-[260px]">
           <div className="flex items-start justify-between mb-4">
             <div>
               <h3 className="text-xs font-semibold text-neutral-900">
                 Audience Retention & Drop-off Curve
               </h3>
               <p className="text-[11px] text-[#737373] mt-0.5">
-                Rata-rata retensi detik ke detik pada video 60 detik
+                Rata-rata retensi detik ke detik pada video terbit
               </p>
             </div>
             <span className="px-2.5 py-1 rounded border border-[#EAEAEA] text-[11px] font-medium text-neutral-800">
-              Viral Curve
+              {publishedList.length > 0 ? "Retention Curve" : "Menunggu Data"}
             </span>
           </div>
 
-          <div className="h-[180px] w-full pt-4">
-            <svg viewBox="0 0 400 150" className="w-full h-full overflow-visible">
-              <defs>
-                <linearGradient id="retGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#171717" stopOpacity="0.2" />
-                  <stop offset="100%" stopColor="#171717" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
-              <line x1="20" y1="20" x2="380" y2="20" stroke="#EAEAEA" strokeWidth="1" strokeDasharray="3,3" />
-              <line x1="20" y1="60" x2="380" y2="60" stroke="#EAEAEA" strokeWidth="1" strokeDasharray="3,3" />
-              <line x1="20" y1="100" x2="380" y2="100" stroke="#EAEAEA" strokeWidth="1" strokeDasharray="3,3" />
-              <line x1="20" y1="140" x2="380" y2="140" stroke="#EAEAEA" strokeWidth="1" />
+          {publishedList.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-10 px-4 border border-dashed border-[#EAEAEA] rounded-xl bg-[#FAFAFA]">
+              <Film className="w-8 h-8 text-neutral-300 mb-2" />
+              <p className="text-xs font-semibold text-neutral-800">
+                Belum ada data retensi audiens
+              </p>
+              <p className="text-[11px] text-[#737373] mt-1 max-w-xs">
+                Grafik retensi penayangan akan terbentuk otomatis setelah ada video yang diterbitkan dan ditonton penonton.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="h-[180px] w-full pt-4">
+                <svg viewBox="0 0 400 150" className="w-full h-full overflow-visible">
+                  <defs>
+                    <linearGradient id="retGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#171717" stopOpacity="0.2" />
+                      <stop offset="100%" stopColor="#171717" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <line x1="20" y1="20" x2="380" y2="20" stroke="#EAEAEA" strokeWidth="1" strokeDasharray="3,3" />
+                  <line x1="20" y1="60" x2="380" y2="60" stroke="#EAEAEA" strokeWidth="1" strokeDasharray="3,3" />
+                  <line x1="20" y1="100" x2="380" y2="100" stroke="#EAEAEA" strokeWidth="1" strokeDasharray="3,3" />
+                  <line x1="20" y1="140" x2="380" y2="140" stroke="#EAEAEA" strokeWidth="1" />
 
-              <path
-                d="M20,22 C60,24 100,35 150,48 C200,60 250,70 300,75 C340,79 380,82 380,82 L380,140 L20,140 Z"
-                fill="url(#retGrad)"
-              />
-              <path
-                d="M20,22 C60,24 100,35 150,48 C200,60 250,70 300,75 C340,79 380,82 380,82"
-                fill="none"
-                stroke="#0A0A0A"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
+                  <path
+                    d="M20,22 C60,24 100,35 150,48 C200,60 250,70 300,75 C340,79 380,82 380,82 L380,140 L20,140 Z"
+                    fill="url(#retGrad)"
+                  />
+                  <path
+                    d="M20,22 C60,24 100,35 150,48 C200,60 250,70 300,75 C340,79 380,82 380,82"
+                    fill="none"
+                    stroke="#0A0A0A"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
 
-          <div className="flex justify-between px-2 text-[11px] font-medium text-neutral-600 border-t border-[#EAEAEA] pt-2 mt-2">
-            <span>0 dtk (Hook 100%)</span>
-            <span>15 dtk (85%)</span>
-            <span>30 dtk (72%)</span>
-            <span>45 dtk (64%)</span>
-            <span>60 dtk (End 58%)</span>
-          </div>
+              <div className="flex justify-between px-2 text-[11px] font-medium text-neutral-600 border-t border-[#EAEAEA] pt-2 mt-2">
+                <span>0 dtk (Hook 100%)</span>
+                <span>15 dtk</span>
+                <span>30 dtk</span>
+                <span>45 dtk</span>
+                <span>60 dtk</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Platform Share Breakdown (5 Cols) */}
-        <div className="lg:col-span-5 border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm space-y-4">
-          <h3 className="text-xs font-semibold text-neutral-900">
-            Perbandingan Kontribusi Antar Platform
-          </h3>
+        {(() => {
+          const ytViews = publishedList
+            .filter((c) => c.targetPlatforms?.includes("youtube"))
+            .reduce((a, b) => a + (Number(b.viewsCount) || 0), 0);
+          const ttViews = publishedList
+            .filter((c) => c.targetPlatforms?.includes("tiktok"))
+            .reduce((a, b) => a + (Number(b.viewsCount) || 0), 0);
+          const igViews = publishedList
+            .filter((c) => c.targetPlatforms?.includes("instagram"))
+            .reduce((a, b) => a + (Number(b.viewsCount) || 0), 0);
+          const fbViews = publishedList
+            .filter((c) => c.targetPlatforms?.includes("facebook"))
+            .reduce((a, b) => a + (Number(b.viewsCount) || 0), 0);
 
-          <div className="space-y-4 pt-1">
-            <div>
-              <div className="flex justify-between text-xs font-medium mb-1">
-                <span className="text-neutral-800">YouTube Shorts</span>
-                <span className="font-semibold text-neutral-900">42% • 353.8k views</span>
+          const sumV = ytViews + ttViews + igViews + fbViews || totalViews;
+          const ytPct = sumV > 0 ? Math.round((ytViews / sumV) * 100) : 0;
+          const ttPct = sumV > 0 ? Math.round((ttViews / sumV) * 100) : 0;
+          const igPct = sumV > 0 ? Math.round((igViews / sumV) * 100) : 0;
+          const fbPct = sumV > 0 ? Math.round((fbViews / sumV) * 100) : 0;
+
+          return (
+            <div className="lg:col-span-5 border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm space-y-4">
+              <h3 className="text-xs font-semibold text-neutral-900">
+                Perbandingan Kontribusi Antar Platform
+              </h3>
+
+              <div className="space-y-4 pt-1">
+                <div>
+                  <div className="flex justify-between text-xs font-medium mb-1">
+                    <span className="text-neutral-800">YouTube Shorts</span>
+                    <span className="font-semibold text-neutral-900">
+                      {ytPct}% • {ytViews > 1000 ? `${(ytViews / 1000).toFixed(1)}k` : ytViews} views
+                    </span>
+                  </div>
+                  <div className="h-2.5 bg-neutral-100 rounded-full overflow-hidden">
+                    <div
+                      style={{ width: `${ytPct}%` }}
+                      className="h-full bg-[#0A0A0A] rounded-full transition-all duration-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-xs font-medium mb-1">
+                    <span className="text-neutral-800">TikTok Direct Post</span>
+                    <span className="font-semibold text-neutral-900">
+                      {ttPct}% • {ttViews > 1000 ? `${(ttViews / 1000).toFixed(1)}k` : ttViews} views
+                    </span>
+                  </div>
+                  <div className="h-2.5 bg-neutral-100 rounded-full overflow-hidden">
+                    <div
+                      style={{ width: `${ttPct}%` }}
+                      className="h-full bg-[#4A4A4A] rounded-full transition-all duration-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-xs font-medium mb-1">
+                    <span className="text-neutral-800">Instagram Reels</span>
+                    <span className="font-semibold text-neutral-900">
+                      {igPct}% • {igViews > 1000 ? `${(igViews / 1000).toFixed(1)}k` : igViews} views
+                    </span>
+                  </div>
+                  <div className="h-2.5 bg-neutral-100 rounded-full overflow-hidden">
+                    <div
+                      style={{ width: `${igPct}%` }}
+                      className="h-full bg-[#787878] rounded-full transition-all duration-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-xs font-medium mb-1">
+                    <span className="text-neutral-800">Facebook Page Video</span>
+                    <span className="font-semibold text-neutral-900">
+                      {fbPct}% • {fbViews > 1000 ? `${(fbViews / 1000).toFixed(1)}k` : fbViews} views
+                    </span>
+                  </div>
+                  <div className="h-2.5 bg-neutral-100 rounded-full overflow-hidden">
+                    <div
+                      style={{ width: `${fbPct}%` }}
+                      className="h-full bg-[#B0B0B0] rounded-full transition-all duration-500"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="h-2.5 bg-neutral-100 rounded-full overflow-hidden">
-                <div className="h-full bg-[#0A0A0A] w-[42%] rounded-full" />
-              </div>
+
+              <p className="text-[11px] text-[#737373] leading-relaxed pt-2 border-t border-[#EAEAEA]">
+                {publishedList.length > 0
+                  ? "Distribusi penayangan otomatis diperbarui berdasarkan metrik tiap akun sosial."
+                  : "Belum ada konten aktif. Publikasikan video di Composer untuk mengaktifkan pelacakan distribusi."}
+              </p>
             </div>
-
-            <div>
-              <div className="flex justify-between text-xs font-medium mb-1">
-                <span className="text-neutral-800">TikTok Direct Post</span>
-                <span className="font-semibold text-neutral-900">31% • 261.1k views</span>
-              </div>
-              <div className="h-2.5 bg-neutral-100 rounded-full overflow-hidden">
-                <div className="h-full bg-[#4A4A4A] w-[31%] rounded-full" />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs font-medium mb-1">
-                <span className="text-neutral-800">Instagram Reels</span>
-                <span className="font-semibold text-neutral-900">18% • 151.6k views</span>
-              </div>
-              <div className="h-2.5 bg-neutral-100 rounded-full overflow-hidden">
-                <div className="h-full bg-[#787878] w-[18%] rounded-full" />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs font-medium mb-1">
-                <span className="text-neutral-800">Facebook Page Video</span>
-                <span className="font-semibold text-neutral-900">9% • 75.8k views</span>
-              </div>
-              <div className="h-2.5 bg-neutral-100 rounded-full overflow-hidden">
-                <div className="h-full bg-[#B0B0B0] w-[9%] rounded-full" />
-              </div>
-            </div>
-          </div>
-
-          <p className="text-[11px] text-[#737373] leading-relaxed pt-2 border-t border-[#EAEAEA]">
-            Formula 1-Click Publishing menghemat sekitar <strong>12.5 jam kerja manual</strong> per bulan.
-          </p>
-        </div>
+          );
+        })()}
       </div>
 
       {/* Content Leaderboard Table */}

@@ -19,14 +19,14 @@ export function DashboardView() {
   const { setActivePage, contentItems, setComposerPrefill, showToast } = useApp();
   const [timeframe, setTimeframe] = useState<"Week" | "Month" | "Quarter">("Week");
 
-  // Heatmap sample values for 35 days (5 weeks)
-  const heatmapData = [
-    1, 2, 0, 3, 4, 2, 1,
-    0, 3, 2, 4, 1, 3, 2,
-    4, 2, 3, 1, 4, 2, 0,
-    2, 4, 3, 1, 2, 4, 3,
-    1, 3, 4, 2, 3, 1, 2,
-  ];
+  // Heatmap values dynamically derived from published items (zero when empty)
+  const publishedItems = contentItems.filter(
+    (c) => c.stage === "terbit" || c.stage === "dianalisis"
+  );
+  const heatmapData = Array.from({ length: 35 }, (_, i) => {
+    if (publishedItems.length === 0) return 0;
+    return i === 25 ? Math.min(publishedItems.length, 4) : 0;
+  });
 
   // Helper color for heatmap
   const getHeatmapColor = (val: number) => {
@@ -196,14 +196,20 @@ export function DashboardView() {
                 </p>
                 <div className="flex items-center gap-2.5">
                   <h2 className="text-[22px] font-semibold tracking-tight text-neutral-900">
-                    128.4k Views / Day
+                    {(() => {
+                      const totalV = contentItems.reduce(
+                        (acc, c) => acc + (Number(c.viewsCount) || 0),
+                        0
+                      );
+                      return totalV > 0 ? `${(totalV / 7).toFixed(1)}k Views / Day` : "0 Views / Day";
+                    })()}
                   </h2>
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#EAF5EE] text-[#2E7D47]">
                     <TrendingUp className="w-3 h-3" />
-                    Optimal
+                    {contentItems.some((c) => Number(c.viewsCount) > 0) ? "Optimal" : "Aktif"}
                   </span>
                 </div>
-                <p className="text-xs text-[#737373] mt-1">Rentang: 19 Okt - 25 Okt 2026</p>
+                <p className="text-xs text-[#737373] mt-1">Rata-rata Penayangan 7 Hari</p>
               </div>
 
               {/* Timeframe selector matching reference */}
@@ -266,41 +272,23 @@ export function DashboardView() {
 
                 {/* 7 Stacked Bars */}
                 <div className="absolute inset-x-0 -top-2 -bottom-3 grid grid-cols-7 items-end justify-items-center z-10">
-                  {[
-                    { yt: 18, tt: 14, ig: 8, fb: 4 },
-                    { yt: 22, tt: 12, ig: 10, fb: 6 },
-                    { yt: 15, tt: 16, ig: 9, fb: 5 },
-                    { yt: 20, tt: 18, ig: 12, fb: 4 },
-                    { yt: 25, tt: 15, ig: 14, fb: 7 },
-                    { yt: 19, tt: 12, ig: 8, fb: 3 },
-                    { yt: 26, tt: 17, ig: 11, fb: 5 },
-                  ].map((bar, i) => {
-                    const total = bar.yt + bar.tt + bar.ig + bar.fb;
-                    return (
+                  {(() => {
+                    const hasViews = contentItems.some((c) => Number(c.viewsCount) > 0);
+                    return Array.from({ length: 7 }).map((_, i) => (
                       <div
                         key={i}
                         className="w-7 flex flex-col-reverse group cursor-pointer transition-transform hover:scale-105"
-                        title={`Total: ${total}k views`}
+                        title={hasViews ? "Aktivitas penayangan" : "0 views"}
                       >
                         <div
-                          style={{ height: `${bar.yt * 2.8}px` }}
-                          className="bg-[#0A0A0A] rounded-b-[2px] transition-opacity group-hover:opacity-90"
-                        />
-                        <div
-                          style={{ height: `${bar.tt * 2.8}px` }}
-                          className="bg-[#4A4A4A] transition-opacity group-hover:opacity-90"
-                        />
-                        <div
-                          style={{ height: `${bar.ig * 2.8}px` }}
-                          className="bg-[#787878] transition-opacity group-hover:opacity-90"
-                        />
-                        <div
-                          style={{ height: `${bar.fb * 2.8}px` }}
-                          className="bg-[#B0B0B0] rounded-t-[2px] transition-opacity group-hover:opacity-90"
+                          style={{ height: hasViews ? "36px" : "4px" }}
+                          className={`${
+                            hasViews ? "bg-[#0A0A0A]" : "bg-neutral-200"
+                          } rounded-[2px] transition-all`}
                         />
                       </div>
-                    );
-                  })}
+                    ));
+                  })()}
                 </div>
               </div>
 
@@ -328,11 +316,17 @@ export function DashboardView() {
                   </p>
                   <div className="flex items-center gap-2">
                     <h2 className="text-[22px] font-semibold tracking-tight text-neutral-900">
-                      2.41M Views
+                      {(() => {
+                        const totalV = contentItems.reduce(
+                          (acc, c) => acc + (Number(c.viewsCount) || 0),
+                          0
+                        );
+                        return totalV > 1000 ? `${(totalV / 1000).toFixed(1)}k Views` : `${totalV} Views`;
+                      })()}
                     </h2>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#EAF5EE] text-[#2E7D47]">
                       <TrendingUp className="w-3 h-3" />
-                      +24%
+                      Aktif
                     </span>
                   </div>
                 </div>
@@ -392,7 +386,7 @@ export function DashboardView() {
                   </p>
                   <div className="flex items-center gap-2">
                     <h2 className="text-[22px] font-semibold tracking-tight text-neutral-900">
-                      100% Synced
+                      {contentItems.some((c) => Number(c.viewsCount) > 0) ? "100% Synced" : "0% Aktif"}
                     </h2>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#EAF5EE] text-[#2E7D47]">
                       4 Hubs
@@ -408,47 +402,83 @@ export function DashboardView() {
                 </button>
               </div>
 
-              <div className="space-y-3.5 my-1">
-                {/* YouTube */}
-                <div className="grid grid-cols-12 items-center gap-2">
-                  <span className="col-span-4 text-[11px] font-medium text-neutral-800">
-                    YouTube
-                  </span>
-                  <div className="col-span-8 h-3.5 bg-[#D9D9D9] rounded-[3px] overflow-hidden cursor-pointer">
-                    <div className="h-full bg-[#0A0A0A] rounded-[3px] w-[42%]" />
-                  </div>
-                </div>
+              {(() => {
+                const totalV = contentItems.reduce((acc, c) => acc + (Number(c.viewsCount) || 0), 0);
+                const ytV = contentItems
+                  .filter((c) => c.targetPlatforms?.includes("youtube"))
+                  .reduce((a, b) => a + (Number(b.viewsCount) || 0), 0);
+                const ttV = contentItems
+                  .filter((c) => c.targetPlatforms?.includes("tiktok"))
+                  .reduce((a, b) => a + (Number(b.viewsCount) || 0), 0);
+                const igV = contentItems
+                  .filter((c) => c.targetPlatforms?.includes("instagram"))
+                  .reduce((a, b) => a + (Number(b.viewsCount) || 0), 0);
+                const fbV = contentItems
+                  .filter((c) => c.targetPlatforms?.includes("facebook"))
+                  .reduce((a, b) => a + (Number(b.viewsCount) || 0), 0);
 
-                {/* TikTok */}
-                <div className="grid grid-cols-12 items-center gap-2">
-                  <span className="col-span-4 text-[11px] font-medium text-neutral-800">
-                    TikTok
-                  </span>
-                  <div className="col-span-8 h-3.5 bg-[#D9D9D9] rounded-[3px] overflow-hidden cursor-pointer">
-                    <div className="h-full bg-[#0A0A0A] rounded-[3px] w-[31%]" />
-                  </div>
-                </div>
+                const sum = ytV + ttV + igV + fbV || totalV;
+                const ytP = sum > 0 ? Math.round((ytV / sum) * 100) : 0;
+                const ttP = sum > 0 ? Math.round((ttV / sum) * 100) : 0;
+                const igP = sum > 0 ? Math.round((igV / sum) * 100) : 0;
+                const fbP = sum > 0 ? Math.round((fbV / sum) * 100) : 0;
 
-                {/* Instagram */}
-                <div className="grid grid-cols-12 items-center gap-2">
-                  <span className="col-span-4 text-[11px] font-medium text-neutral-800">
-                    Instagram
-                  </span>
-                  <div className="col-span-8 h-3.5 bg-[#D9D9D9] rounded-[3px] overflow-hidden cursor-pointer">
-                    <div className="h-full bg-[#0A0A0A] rounded-[3px] w-[18%]" />
-                  </div>
-                </div>
+                return (
+                  <div className="space-y-3.5 my-1">
+                    {/* YouTube */}
+                    <div className="grid grid-cols-12 items-center gap-2">
+                      <span className="col-span-4 text-[11px] font-medium text-neutral-800">
+                        YouTube
+                      </span>
+                      <div className="col-span-8 h-3.5 bg-neutral-100 rounded-[3px] overflow-hidden">
+                        <div
+                          style={{ width: `${ytP}%` }}
+                          className="h-full bg-[#0A0A0A] rounded-[3px] transition-all duration-500"
+                        />
+                      </div>
+                    </div>
 
-                {/* Facebook */}
-                <div className="grid grid-cols-12 items-center gap-2">
-                  <span className="col-span-4 text-[11px] font-medium text-neutral-800">
-                    Facebook Page
-                  </span>
-                  <div className="col-span-8 h-3.5 bg-[#D9D9D9] rounded-[3px] overflow-hidden cursor-pointer">
-                    <div className="h-full bg-[#0A0A0A] rounded-[3px] w-[9%]" />
+                    {/* TikTok */}
+                    <div className="grid grid-cols-12 items-center gap-2">
+                      <span className="col-span-4 text-[11px] font-medium text-neutral-800">
+                        TikTok
+                      </span>
+                      <div className="col-span-8 h-3.5 bg-neutral-100 rounded-[3px] overflow-hidden">
+                        <div
+                          style={{ width: `${ttP}%` }}
+                          className="h-full bg-[#0A0A0A] rounded-[3px] transition-all duration-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Instagram */}
+                    <div className="grid grid-cols-12 items-center gap-2">
+                      <span className="col-span-4 text-[11px] font-medium text-neutral-800">
+                        Instagram
+                      </span>
+                      <div className="col-span-8 h-3.5 bg-neutral-100 rounded-[3px] overflow-hidden">
+                        <div
+                          style={{ width: `${igP}%` }}
+                          className="h-full bg-[#0A0A0A] rounded-[3px] transition-all duration-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Facebook */}
+                    <div className="grid grid-cols-12 items-center gap-2">
+                      <span className="col-span-4 text-[11px] font-medium text-neutral-800">
+                        Facebook Page
+                      </span>
+                      <div className="col-span-8 h-3.5 bg-neutral-100 rounded-[3px] overflow-hidden">
+                        <div
+                          style={{ width: `${fbP}%` }}
+                          className="h-full bg-[#0A0A0A] rounded-[3px] transition-all duration-500"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                );
+              })()}
 
               <div className="grid grid-cols-12 gap-2 mt-3">
                 <div className="col-span-4"></div>
@@ -474,7 +504,12 @@ export function DashboardView() {
                   Posting Consistency Cadence
                 </p>
                 <h2 className="text-[22px] font-semibold tracking-tight text-neutral-900">
-                  ± 1.8 Posts / Day
+                  {(() => {
+                    const pubCount = contentItems.filter(
+                      (c) => c.stage === "terbit" || c.stage === "dianalisis"
+                    ).length;
+                    return pubCount > 0 ? `± ${(pubCount / 35).toFixed(1)} Posts / Day` : "0 Posts / Day";
+                  })()}
                 </h2>
                 <p className="text-xs text-[#737373] mt-1">35 Hari Terakhir</p>
               </div>

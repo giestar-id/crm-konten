@@ -161,7 +161,7 @@ export function AccountsView() {
                     className="px-3.5 py-1.5 rounded-lg border border-[#EAEAEA] bg-white text-xs font-semibold text-neutral-800 hover:bg-neutral-50 transition-colors flex items-center gap-1.5 shadow-2xs"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>+ Tambah Akun</span>
+                    <span>Tambah Akun</span>
                   </button>
 
                   <button

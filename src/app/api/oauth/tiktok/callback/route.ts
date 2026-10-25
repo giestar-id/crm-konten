@@ -6,9 +6,12 @@ export async function GET(req: NextRequest) {
   const error = req.nextUrl.searchParams.get("error");
   const errorDescription = req.nextUrl.searchParams.get("error_description");
   const state = req.nextUrl.searchParams.get("state") || "";
-  const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "localhost:3000";
-  const proto = req.headers.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${proto}://${host}`;
+  const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "";
+  const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
+  const proto = req.headers.get("x-forwarded-proto") || (isLocal ? "http" : "https");
+  const baseUrl = host && !isLocal
+    ? `${proto}://${host}`
+    : (process.env.NEXT_PUBLIC_BASE_URL || "https://crm-konten.giestar.web.id");
 
   if (error || !code) {
     return NextResponse.redirect(

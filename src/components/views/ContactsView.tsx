@@ -59,43 +59,57 @@ export function ContactsView() {
       </div>
 
       {/* Summary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm">
-          <p className="text-xs text-[#737373] mb-1">Total Pipeline Nilai Deals</p>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-semibold text-neutral-900">
-              ${contacts.reduce((acc, c) => acc + c.dealValue, 0).toLocaleString()}
-            </span>
-            <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-[#EAF5EE] text-[#2E7D47]">
-              4 Mitra Aktif
-            </span>
-          </div>
-        </div>
+      {(() => {
+        const totalPipeline = contacts.reduce((acc, c) => acc + (Number(c.dealValue) || 0), 0);
+        const signedList = contacts.filter(
+          (c) => c.dealStatus === "Signed" || c.dealStatus === "Paid" || c.dealStatus === "Sponsored"
+        );
+        const signedValue = signedList.reduce((acc, c) => acc + (Number(c.dealValue) || 0), 0);
+        const negoList = contacts.filter(
+          (c) => c.dealStatus === "Negotiation" || c.dealStatus === "Pitching"
+        );
+        const negoValue = negoList.reduce((acc, c) => acc + (Number(c.dealValue) || 0), 0);
 
-        <div className="border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm">
-          <p className="text-xs text-[#737373] mb-1">Deals Berstatus Signed</p>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-semibold text-neutral-900">
-              $7,700
-            </span>
-            <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-[#EAF5EE] text-[#2E7D47]">
-              Vercel & Supabase
-            </span>
-          </div>
-        </div>
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm">
+              <p className="text-xs text-[#737373] mb-1">Total Pipeline Nilai Deals</p>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-semibold text-neutral-900">
+                  ${totalPipeline.toLocaleString()}
+                </span>
+                <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-[#EAF5EE] text-[#2E7D47]">
+                  {contacts.length} Mitra
+                </span>
+              </div>
+            </div>
 
-        <div className="border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm">
-          <p className="text-xs text-[#737373] mb-1">Dalam Tahap Negosiasi</p>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-semibold text-neutral-900">
-              $2,800
-            </span>
-            <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-[#FEF3C7] text-[#B45309]">
-              Linear Campaign
-            </span>
+            <div className="border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm">
+              <p className="text-xs text-[#737373] mb-1">Deals Berstatus Signed / Paid</p>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-semibold text-neutral-900">
+                  ${signedValue.toLocaleString()}
+                </span>
+                <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-[#EAF5EE] text-[#2E7D47]">
+                  {signedList.length} Kontrak
+                </span>
+              </div>
+            </div>
+
+            <div className="border border-[#EAEAEA] rounded-xl p-5 bg-white shadow-sm">
+              <p className="text-xs text-[#737373] mb-1">Dalam Tahap Negosiasi</p>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-semibold text-neutral-900">
+                  ${negoValue.toLocaleString()}
+                </span>
+                <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-[#FEF3C7] text-[#B45309]">
+                  {negoList.length} Prospek
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Contacts Table */}
       <div className="border border-[#EAEAEA] rounded-xl bg-white shadow-sm overflow-hidden">
