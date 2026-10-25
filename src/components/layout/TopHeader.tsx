@@ -6,11 +6,7 @@ import {
   Menu,
   Search,
   Plus,
-  HelpCircle,
   ChevronDown,
-  Layers,
-  Sparkles,
-  ExternalLink,
   LogOut,
 } from "lucide-react";
 
@@ -76,14 +72,8 @@ export function TopHeader({ onToggleMobileSidebar }: TopHeaderProps) {
         </div>
       </div>
 
-      {/* Right: Actions, Help Center & User Profile */}
-      <div className="flex items-center gap-3 sm:gap-5">
-        {/* Workspace Pill */}
-        <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#FAFAFA] border border-[#EAEAEA] text-xs text-neutral-600">
-          <Layers className="w-3.5 h-3.5 text-neutral-500" />
-          <span className="font-medium text-neutral-800">{activeWorkspace.name}</span>
-        </div>
-
+      {/* Right: Actions & User Profile */}
+      <div className="flex items-center gap-3 sm:gap-4">
         {/* Quick Action: 1-Click Compose CTA */}
         <button
           onClick={() => setActivePage("compose")}
@@ -91,17 +81,6 @@ export function TopHeader({ onToggleMobileSidebar }: TopHeaderProps) {
         >
           <Plus className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Buat Post</span>
-        </button>
-
-        {/* Help Center */}
-        <button
-          onClick={() =>
-            showToast("Social Post Hub v1.0 — Dokumentasi panduan API & Creator CRM")
-          }
-          className="hidden sm:flex items-center gap-1.5 text-[13px] font-medium text-[#737373] hover:text-[#171717] transition-colors"
-        >
-          <HelpCircle className="w-4 h-4" />
-          <span>Help</span>
         </button>
 
         {/* Profile Dropdown */}

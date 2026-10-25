@@ -127,17 +127,6 @@ const defaultWorkspaces: Workspace[] = [
     role: "Owner",
     createdAt: "2026-01-01",
   },
-  {
-    id: "ws-2",
-    name: "Aji Creative Hub",
-    description: "Client projects, design systems & developer tutorials",
-    color: "#DF5835",
-    initials: "AC",
-    connectedAccountsCount: 0,
-    contentCount: 0,
-    role: "Owner",
-    createdAt: "2026-02-01",
-  },
 ];
 
 const defaultAccounts: SocialAccount[] = [
