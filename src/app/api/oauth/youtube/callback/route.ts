@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
         handle: customHandle,
         avatar_url: avatarUrl,
         account_type: "YouTube Channel",
-        access_token: refreshToken || accessToken,
+        access_token: accessToken,
         refresh_token: refreshToken || null,
         token_expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
         scopes: [
