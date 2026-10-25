@@ -8,6 +8,7 @@ import { LivePublishModal } from "@/components/modals/LivePublishModal";
 import { WorkspaceModal } from "@/components/modals/WorkspaceModal";
 
 // Views
+import { LoginView } from "@/components/views/LoginView";
 import { DashboardView } from "@/components/views/DashboardView";
 import { ComposerView } from "@/components/views/ComposerView";
 import { PipelineView } from "@/components/views/PipelineView";
@@ -19,12 +20,31 @@ import { AccountsView } from "@/components/views/AccountsView";
 import { ContactsView } from "@/components/views/ContactsView";
 import { NotificationsView } from "@/components/views/NotificationsView";
 import { SettingsView } from "@/components/views/SettingsView";
+import { Loader2 } from "lucide-react";
 
 function MainContent() {
-  const { activePage, toastMessage } = useApp();
+  const { user, authLoading, activePage, toastMessage } = useApp();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [workspaceModalOpen, setWorkspaceModalOpen] = useState(false);
 
+  // 1. Loading state while checking Supabase session
+  if (authLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#FAFAFA]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-800" />
+          <p className="text-xs text-neutral-500 font-medium">Memuat sesi autentikasi...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Unauthenticated state -> Show Luxury LoginView
+  if (!user) {
+    return <LoginView />;
+  }
+
+  // 3. Authenticated state -> Show full CRM Dashboard
   return (
     <div className="flex h-screen overflow-hidden bg-white select-none">
       {/* Toast Notification Alert */}

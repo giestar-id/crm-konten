@@ -11,6 +11,7 @@ import {
   Layers,
   Sparkles,
   ExternalLink,
+  LogOut,
 } from "lucide-react";
 
 interface TopHeaderProps {
@@ -24,9 +25,24 @@ export function TopHeader({ onToggleMobileSidebar }: TopHeaderProps) {
     searchQuery,
     setSearchQuery,
     showToast,
+    user,
+    logout,
   } = useApp();
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+
+  const userDisplayName =
+    user?.user_metadata?.full_name ||
+    user?.email?.split("@")[0] ||
+    "Aji Subekti";
+
+  const userInitials =
+    userDisplayName
+      .split(" ")
+      .map((w: string) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "AS";
 
   return (
     <header className="h-16 border-b border-[#EAEAEA] bg-white px-4 lg:px-7 flex items-center justify-between shrink-0 select-none">
@@ -95,17 +111,17 @@ export function TopHeader({ onToggleMobileSidebar }: TopHeaderProps) {
             className="flex items-center gap-2 text-[13px] font-semibold text-[#171717] hover:text-neutral-700 transition-colors pl-1"
           >
             <div className="w-7 h-7 rounded-full bg-[#171717] text-white flex items-center justify-center text-xs font-medium">
-              AS
+              {userInitials}
             </div>
-            <span className="hidden md:inline">Aji Subekti</span>
+            <span className="hidden md:inline capitalize">{userDisplayName}</span>
             <ChevronDown className="w-3.5 h-3.5 text-neutral-500" />
           </button>
 
           {profileDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-52 bg-white border border-[#EAEAEA] rounded-xl shadow-xl py-1.5 z-50">
+            <div className="absolute right-0 mt-2 w-56 bg-white border border-[#EAEAEA] rounded-xl shadow-xl py-1.5 z-50">
               <div className="px-4 py-2 border-b border-[#EAEAEA]">
-                <p className="text-xs font-semibold text-neutral-900">Aji Subekti</p>
-                <p className="text-[11px] text-neutral-500">Solo Creator • Asia/Jakarta (WIB)</p>
+                <p className="text-xs font-semibold text-neutral-900 capitalize">{userDisplayName}</p>
+                <p className="text-[11px] text-neutral-500 font-mono truncate">{user?.email || "creator@crm-konten.id"}</p>
               </div>
               <button
                 onClick={() => {
@@ -127,13 +143,14 @@ export function TopHeader({ onToggleMobileSidebar }: TopHeaderProps) {
               </button>
               <div className="my-1 border-t border-[#EAEAEA]"></div>
               <button
-                onClick={() => {
-                  showToast("Sesi aktif dijaga aman melalui HTTP-only cookies.");
+                onClick={async () => {
                   setProfileDropdownOpen(false);
+                  await logout();
                 }}
-                className="w-full text-left px-4 py-2 text-xs text-neutral-500 hover:bg-neutral-50"
+                className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center justify-between font-medium transition-colors"
               >
-                Switch Account
+                <span>Keluar (Logout)</span>
+                <LogOut className="w-3.5 h-3.5" />
               </button>
             </div>
           )}

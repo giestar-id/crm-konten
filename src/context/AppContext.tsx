@@ -102,6 +102,15 @@ interface AppContextType {
   // Supabase sync status
   isSupabaseLive: boolean;
   refreshFromSupabase: () => Promise<void>;
+
+  // Auth state & actions
+  user: any;
+  authLoading: boolean;
+  loginWithEmail: (email: string, pass: string) => Promise<{ error: string | null }>;
+  registerWithEmail: (email: string, pass: string) => Promise<{ error: string | null; needsConfirmation?: boolean }>;
+  loginWithGoogle: () => Promise<void>;
+  loginAsGuest: () => void;
+  logout: () => Promise<void>;
 }
 
 // Fallback initial data in case Supabase is waiting for SQL grants
@@ -517,6 +526,103 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => {
       setToastMessage((prev) => (prev === msg ? null : prev));
     }, 3200);
+  };
+
+  // Supabase Auth State
+  const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [isDemoSession, setIsDemoSession] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+      }
+      setAuthLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        setIsDemoSession(false);
+      }
+      setAuthLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const loginWithEmail = async (email: string, pass: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: pass,
+      });
+      if (error) {
+        return { error: error.message };
+      }
+      setUser(data.user);
+      setIsDemoSession(false);
+      showToast("Selamat datang kembali di Social Post Hub!");
+      return { error: null };
+    } catch (err: any) {
+      return { error: err.message || "Gagal masuk." };
+    }
+  };
+
+  const registerWithEmail = async (email: string, pass: string) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: pass,
+      });
+      if (error) {
+        return { error: error.message };
+      }
+      if (data.session) {
+        setUser(data.user);
+        setIsDemoSession(false);
+        showToast("Akun Anda berhasil dibuat & siap digunakan!");
+        return { error: null };
+      } else {
+        return { error: null, needsConfirmation: true };
+      }
+    } catch (err: any) {
+      return { error: err.message || "Gagal mendaftarkan akun." };
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: origin,
+      },
+    });
+  };
+
+  const loginAsGuest = () => {
+    setUser({
+      id: "creator-demo-id",
+      email: "creator@socialposthub.id",
+      user_metadata: { full_name: "Aji Subekti (Creator)" },
+    });
+    setIsDemoSession(true);
+    showToast("Masuk sebagai Creator Demo Mode!");
+  };
+
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch {}
+    setUser(null);
+    setIsDemoSession(false);
+    showToast("Anda telah keluar dari aplikasi.");
   };
 
   // Sync / Read from Supabase on load
@@ -1182,6 +1288,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setComposerPrefill,
         isSupabaseLive,
         refreshFromSupabase,
+        user,
+        authLoading,
+        loginWithEmail,
+        registerWithEmail,
+        loginWithGoogle,
+        loginAsGuest,
+        logout,
       }}
     >
       {children}

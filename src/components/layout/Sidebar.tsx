@@ -20,6 +20,7 @@ import {
   Check,
   Code,
   X,
+  LogOut,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -40,6 +41,7 @@ export function Sidebar({
     workspaces,
     setActiveWorkspace,
     unreadNotifCount,
+    logout,
   } = useApp();
 
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
@@ -187,6 +189,16 @@ export function Sidebar({
             >
               <Settings className="w-4 h-4" />
               <span>Settings</span>
+            </button>
+            <button
+              onClick={async () => {
+                setMobileOpen(false);
+                await logout();
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-neutral-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Keluar (Logout)</span>
             </button>
           </nav>
         </div>
