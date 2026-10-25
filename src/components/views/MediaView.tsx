@@ -38,17 +38,12 @@ export function MediaView() {
       {/* Title & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-neutral-100 text-neutral-800">
-              Media Assets Storage
-            </span>
-            <span className="text-xs text-[#737373]">
-              Resumable Video Library (TUS Storage)
-            </span>
-          </div>
-          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight mt-1">
-            Media Library
+          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight">
+            Media Assets
           </h1>
+          <p className="text-xs text-[#737373] mt-0.5">
+            Penyimpanan aset video, thumbnail, dan materi kreatif
+          </p>
         </div>
 
         <div className="flex items-center gap-2.5">

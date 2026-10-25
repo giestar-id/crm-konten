@@ -41,16 +41,11 @@ export function ContactsView() {
       {/* Title & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-neutral-100 text-neutral-800">
-              Sponsor & Collaborator CRM (PRD CRM-7)
-            </span>
-          </div>
-          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight mt-1">
-            Manajemen Mitra Brand & Sponsorship
+          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight">
+            Sponsor CRM
           </h1>
-          <p className="text-xs text-[#737373]">
-            Kelola relasi brand deals, nilai kontrak sponsorship & integrasi dengan kartu pipeline
+          <p className="text-xs text-[#737373] mt-0.5">
+            Kelola kerja sama brand, sponsor, dan kolaborasi konten
           </p>
         </div>
 
@@ -59,7 +54,7 @@ export function ContactsView() {
           className="px-3.5 py-1.5 rounded-lg bg-[#0A0A0A] text-white text-xs font-medium hover:bg-neutral-800 transition-colors flex items-center gap-1.5 shadow-sm"
         >
           <Plus className="w-3.5 h-3.5" />
-          <span>Tambah Mitra Brand</span>
+          <span>Tambah Mitra</span>
         </button>
       </div>
 

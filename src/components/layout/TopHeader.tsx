@@ -130,7 +130,7 @@ export function TopHeader({ onToggleMobileSidebar }: TopHeaderProps) {
                 }}
                 className="w-full text-left px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-50 flex items-center justify-between"
               >
-                <span>Profile & Timezone</span>
+                <span>Profil & Pengaturan</span>
               </button>
               <button
                 onClick={() => {
@@ -139,7 +139,7 @@ export function TopHeader({ onToggleMobileSidebar }: TopHeaderProps) {
                 }}
                 className="w-full text-left px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-50 flex items-center justify-between"
               >
-                <span>OAuth Connected Accounts</span>
+                <span>Akun Sosial</span>
               </button>
               <div className="my-1 border-t border-[#EAEAEA]"></div>
               <button
@@ -149,7 +149,7 @@ export function TopHeader({ onToggleMobileSidebar }: TopHeaderProps) {
                 }}
                 className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center justify-between font-medium transition-colors"
               >
-                <span>Keluar (Logout)</span>
+                <span>Keluar</span>
                 <LogOut className="w-3.5 h-3.5" />
               </button>
             </div>

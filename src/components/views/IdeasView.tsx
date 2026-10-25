@@ -111,17 +111,12 @@ export function IdeasView() {
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-neutral-100 text-neutral-800">
-              Creative Studio
-            </span>
-            <span className="text-xs text-[#737373]">
-              Ide Cepat & AI Multi-Platform Generator
-            </span>
-          </div>
-          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight mt-1">
-            Ideas Bank & AI Creative Studio
+          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight">
+            Ideas Bank
           </h1>
+          <p className="text-xs text-[#737373] mt-0.5">
+            Koleksi ide konten, hook viral, dan outline naskah video
+          </p>
         </div>
       </div>
 
@@ -133,7 +128,7 @@ export function IdeasView() {
             <div className="flex items-center gap-2">
               <Lightbulb className="w-4 h-4 text-neutral-700" />
               <h3 className="text-xs font-semibold text-neutral-900">
-                Tangkap Ide Kilat (Quick Capture)
+                Tambah Ide Cepat
               </h3>
             </div>
 

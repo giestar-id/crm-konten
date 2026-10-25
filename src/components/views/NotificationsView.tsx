@@ -36,21 +36,11 @@ export function NotificationsView() {
       {/* Title & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-neutral-100 text-neutral-800">
-              Activity & Audit Logs
-            </span>
-            {unreadNotifCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-[#171717] text-white">
-                {unreadNotifCount} Belum Dibaca
-              </span>
-            )}
-          </div>
-          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight mt-1">
-            Notifikasi & Audit Log
+          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight">
+            Notifikasi
           </h1>
-          <p className="text-xs text-[#737373]">
-            Update status publish multi-platform, antrean background runner, dan peringatan token
+          <p className="text-xs text-[#737373] mt-0.5">
+            Pemberitahuan aktivitas publikasi dan status akun sosial
           </p>
         </div>
 

@@ -72,20 +72,11 @@ export function AccountsView() {
       {/* Title & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-neutral-100 text-neutral-800">
-              OAuth 2.0 & Platform APIs
-            </span>
-            <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#EAF5EE] text-[#2E7D47] flex items-center gap-1">
-              <Database className="w-3 h-3" />
-              <span>Supabase Connected</span>
-            </span>
-          </div>
-          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight mt-1">
-            Koneksi Akun Sosial & Kuota API
+          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight">
+            Koneksi Akun Sosial
           </h1>
-          <p className="text-xs text-[#737373]">
-            Database: <span className="font-mono text-neutral-800">sifohydpetakfsczfsfm.supabase.co</span>
+          <p className="text-xs text-[#737373] mt-0.5">
+            Hubungkan akun YouTube, TikTok, Instagram, dan Facebook untuk publikasi otomatis
           </p>
         </div>
 
@@ -95,7 +86,7 @@ export function AccountsView() {
             className="px-3.5 py-1.5 rounded-lg border border-[#EAEAEA] text-xs font-semibold text-neutral-800 hover:bg-neutral-50 transition-colors flex items-center gap-1.5 shadow-sm"
           >
             <Key className="w-3.5 h-3.5" />
-            <span>Panduan Kunci API (Semua Platform)</span>
+            <span>Panduan API</span>
           </button>
         </div>
       </div>

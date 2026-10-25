@@ -43,10 +43,10 @@ export function DashboardView() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-[22px] font-semibold text-[#171717] tracking-tight">
-            Creator Dashboard
+            Dashboard
           </h1>
           <p className="text-xs text-[#737373] mt-0.5">
-            Ringkasan performa multi-platform, pipeline konten & pelacak konsistensi posting
+            Ringkasan performa konten & jadwal posting multi-platform
           </p>
         </div>
 
@@ -56,13 +56,13 @@ export function DashboardView() {
             className="px-3.5 py-1.5 rounded-lg bg-[#0A0A0A] text-white text-xs font-medium hover:bg-neutral-800 transition-colors flex items-center gap-1.5 shadow-sm"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>1-Click Publish Now</span>
+            <span>Buat Post</span>
           </button>
           <button
             onClick={() => setActivePage("pipeline")}
             className="px-3.5 py-1.5 rounded-lg border border-[#EAEAEA] text-xs font-medium text-neutral-800 hover:bg-neutral-50 transition-colors"
           >
-            Buka Pipeline
+            Pipeline
           </button>
         </div>
       </div>

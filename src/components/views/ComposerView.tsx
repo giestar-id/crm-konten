@@ -225,14 +225,11 @@ export function ComposerView() {
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EAEAEA] pb-4">
         <div>
-          <span className="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-neutral-100 text-neutral-800">
-            Universal Composer • 1-Click Multi-Platform
-          </span>
-          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight mt-1">
-            Publish & Schedule Video
+          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight">
+            Composer
           </h1>
-          <p className="text-xs text-[#737373]">
-            Upload 1 video, sesuaikan judul & caption, lalu kirim ke YouTube, Instagram, TikTok & Facebook secara paralel.
+          <p className="text-xs text-[#737373] mt-0.5">
+            Unggah video dan publikasikan ke YouTube, Instagram, TikTok, dan Facebook
           </p>
         </div>
 

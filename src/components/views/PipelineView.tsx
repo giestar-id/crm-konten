@@ -121,17 +121,12 @@ export function PipelineView() {
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-neutral-100 text-neutral-800">
-              Content CRM
-            </span>
-            <span className="text-xs text-[#737373]">
-              8 Tahap Siklus Hidup Konten
-            </span>
-          </div>
-          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight mt-1">
+          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight">
             Pipeline Konten
           </h1>
+          <p className="text-xs text-[#737373] mt-0.5">
+            Kelola alur kerja dan tahapan produksi konten dari ide hingga evaluasi
+          </p>
         </div>
 
         {/* Filters & Actions */}

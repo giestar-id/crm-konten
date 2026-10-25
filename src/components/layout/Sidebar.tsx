@@ -48,20 +48,20 @@ export function Sidebar({
 
   const navItems: { id: ActivePage; label: string; icon: React.ReactNode; badge?: number }[] = [
     { id: "dashboard", label: "Dashboard", icon: <PieChart className="w-4 h-4 stroke-[2]" /> },
-    { id: "compose", label: "Composer (1-Click)", icon: <Send className="w-4 h-4" /> },
-    { id: "pipeline", label: "Content Pipeline", icon: <Kanban className="w-4 h-4" /> },
-    { id: "calendar", label: "Calendars & Schedule", icon: <Calendar className="w-4 h-4" /> },
+    { id: "compose", label: "Composer", icon: <Send className="w-4 h-4" /> },
+    { id: "pipeline", label: "Pipeline", icon: <Kanban className="w-4 h-4" /> },
+    { id: "calendar", label: "Kalender", icon: <Calendar className="w-4 h-4" /> },
   ];
 
   const databaseItems: { id: ActivePage; label: string; icon: React.ReactNode; badge?: number }[] = [
     { id: "analytics", label: "Analytics", icon: <TrendingUp className="w-4 h-4" /> },
-    { id: "ideas", label: "Ideas Bank & AI", icon: <Lightbulb className="w-4 h-4" /> },
+    { id: "ideas", label: "Ideas Bank", icon: <Lightbulb className="w-4 h-4" /> },
     { id: "media", label: "Media Assets", icon: <Film className="w-4 h-4" /> },
     { id: "accounts", label: "Social Accounts", icon: <Share2 className="w-4 h-4" /> },
     { id: "contacts", label: "Sponsor CRM", icon: <Contact2 className="w-4 h-4" /> },
     {
       id: "notifications",
-      label: "Notifications",
+      label: "Notifikasi",
       icon: <Bell className="w-4 h-4" />,
       badge: unreadNotifCount > 0 ? unreadNotifCount : undefined,
     },
@@ -103,7 +103,7 @@ export function Sidebar({
                   SOCIAL POST HUB
                 </span>
                 <span className="text-[10px] text-[#737373] tracking-wide block mt-0.5">
-                  Multi-Platform & CRM
+                  giestar.web.id
                 </span>
               </div>
             </button>
@@ -144,7 +144,7 @@ export function Sidebar({
           {/* Database Section */}
           <div className="px-3 py-1">
             <p className="px-3 mb-2 text-[10px] font-semibold tracking-wider text-neutral-400 uppercase">
-              DATABASE & ASSETS
+              DATA
             </p>
             <nav className="space-y-1">
               {databaseItems.map((item) => {
@@ -188,7 +188,7 @@ export function Sidebar({
               }`}
             >
               <Settings className="w-4 h-4" />
-              <span>Settings</span>
+              <span>Pengaturan</span>
             </button>
             <button
               onClick={async () => {
@@ -198,7 +198,7 @@ export function Sidebar({
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-neutral-500 hover:bg-red-50 hover:text-red-600 transition-colors"
             >
               <LogOut className="w-4 h-4" />
-              <span>Keluar (Logout)</span>
+              <span>Keluar</span>
             </button>
           </nav>
         </div>
@@ -221,7 +221,7 @@ export function Sidebar({
                   {activeWorkspace.name}
                 </span>
                 <span className="text-[10px] text-[#737373] block truncate">
-                  {activeWorkspace.connectedAccountsCount} Accounts • {activeWorkspace.role}
+                  {activeWorkspace.connectedAccountsCount} Akun • {activeWorkspace.role}
                 </span>
               </div>
             </div>
@@ -232,7 +232,7 @@ export function Sidebar({
           {workspaceMenuOpen && (
             <div className="absolute bottom-16 left-3 right-3 bg-white border border-[#EAEAEA] rounded-xl shadow-xl p-2 z-50">
               <div className="text-[11px] font-semibold text-neutral-400 uppercase px-2 py-1">
-                Workspaces (Batches)
+                Workspace
               </div>
               <div className="space-y-1 my-1 max-h-48 overflow-y-auto">
                 {workspaces.map((ws) => (
@@ -272,7 +272,7 @@ export function Sidebar({
                   className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium text-neutral-700 hover:bg-neutral-100 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Create New Workspace</span>
+                  <span>Workspace Baru</span>
                 </button>
               </div>
             </div>

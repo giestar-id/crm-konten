@@ -42,17 +42,12 @@ export function AnalyticsView() {
       {/* Title & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-neutral-100 text-neutral-800">
-              Cross-Platform Analytics
-            </span>
-            <span className="text-xs text-[#737373]">
-              Agregasi Metrik YouTube, TikTok, Instagram & Facebook
-            </span>
-          </div>
-          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight mt-1">
-            Tracking & Laporan Performa
+          <h1 className="text-[22px] font-semibold text-neutral-900 tracking-tight">
+            Analytics
           </h1>
+          <p className="text-xs text-[#737373] mt-0.5">
+            Performa penayangan dan interaksi konten lintas platform
+          </p>
         </div>
 
         <div className="flex items-center gap-2.5">
