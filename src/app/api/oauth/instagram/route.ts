@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   }
 
   const scopes = [
-    "instagram_basic",
+    "instagram_business_basic",
     "instagram_content_publish",
     "pages_show_list",
     "pages_read_engagement",
