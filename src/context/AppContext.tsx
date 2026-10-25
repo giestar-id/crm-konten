@@ -859,19 +859,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     setSocialAccounts((prev) => [...prev, newAcc]);
     try {
-      await supabase.from("social_accounts").insert({
+      const { error: insError } = await supabase.from("social_accounts").insert({
         id: newId,
         workspace_id: activeWorkspace.id,
         platform: acc.platform,
+        external_account_id: newId,
         display_name: acc.displayName,
         handle: newAcc.handle,
         avatar_url: newAcc.avatarUrl,
         account_type: newAcc.accountType,
+        access_token: "manual_connected",
         status: "active",
         scopes: [],
       });
-    } catch {
-      // ignore
+      if (insError) {
+        console.error("Failed to insert social account to Supabase:", insError);
+      }
+    } catch (err) {
+      console.error("Error inserting social account:", err);
     }
     showToast(`Akun ${acc.displayName} (${acc.platform.toUpperCase()}) berhasil ditambahkan!`);
   };

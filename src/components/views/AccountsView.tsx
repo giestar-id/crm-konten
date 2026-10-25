@@ -58,7 +58,7 @@ const PLATFORMS: PlatformConfig[] = [
     name: "Facebook",
     badge: "Fanpage Video",
     desc: "Publikasi video & Reel ke Halaman Facebook resmi",
-    connectRoute: "/api/oauth/instagram",
+    connectRoute: "/api/oauth/facebook",
   },
 ];
 
@@ -77,6 +77,8 @@ export function AccountsView() {
         ? "/api/oauth/youtube"
         : platform === "tiktok"
         ? "/api/oauth/tiktok"
+        : platform === "facebook"
+        ? "/api/oauth/facebook"
         : "/api/oauth/instagram";
     window.location.href = route;
   };
@@ -317,6 +319,18 @@ export function AccountsView() {
                   <span>Mulai Otorisasi OAuth</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
+                {modalPlatform === "instagram" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalPlatform(null);
+                      window.location.href = "/api/oauth/facebook";
+                    }}
+                    className="w-full py-1.5 px-3 rounded-lg border border-[#EAEAEA] bg-white text-neutral-800 text-[11px] font-medium hover:bg-neutral-50 transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <span>Atau Login via Akun Meta / Facebook Page</span>
+                  </button>
+                )}
               </div>
 
               {/* Option 2: Add Account Entry Manually */}
