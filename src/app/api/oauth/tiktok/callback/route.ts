@@ -11,7 +11,9 @@ export async function GET(req: NextRequest) {
   const proto = req.headers.get("x-forwarded-proto") || (isLocal ? "http" : "https");
   const baseUrl = host && !isLocal
     ? `${proto}://${host}`
-    : (process.env.NEXT_PUBLIC_BASE_URL || "https://crm-konten.giestar.web.id");
+    : (process.env.NEXT_PUBLIC_BASE_URL && !process.env.NEXT_PUBLIC_BASE_URL.includes("localhost")
+        ? process.env.NEXT_PUBLIC_BASE_URL
+        : "https://crm-konten.giestar.web.id");
 
   if (error || !code) {
     return NextResponse.redirect(

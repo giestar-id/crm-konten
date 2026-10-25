@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "localhost:3000";
-  const proto = req.headers.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${proto}://${host}`;
+  const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "";
+  const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
+  const proto = req.headers.get("x-forwarded-proto") || (isLocal ? "http" : "https");
+  const baseUrl = host && !isLocal
+    ? `${proto}://${host}`
+    : (process.env.NEXT_PUBLIC_BASE_URL && !process.env.NEXT_PUBLIC_BASE_URL.includes("localhost")
+        ? process.env.NEXT_PUBLIC_BASE_URL
+        : "https://crm-konten.giestar.web.id");
   const redirectUri = `${baseUrl}/api/oauth/youtube/callback`;
 
   if (!clientId || clientId === "your_google_client_id_here") {
