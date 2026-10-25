@@ -6,11 +6,9 @@ export async function GET(req: NextRequest) {
   const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "";
   const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
   const proto = req.headers.get("x-forwarded-proto") || (isLocal ? "http" : "https");
-  const baseUrl = host && !isLocal
+  const baseUrl = host
     ? `${proto}://${host}`
-    : (process.env.NEXT_PUBLIC_BASE_URL && !process.env.NEXT_PUBLIC_BASE_URL.includes("localhost")
-        ? process.env.NEXT_PUBLIC_BASE_URL
-        : "https://crm-konten.giestar.web.id");
+    : (process.env.NEXT_PUBLIC_BASE_URL || "https://crm-konten.giestar.web.id");
   const redirectUri = process.env.TIKTOK_REDIRECT_URI || `${baseUrl}/api/oauth/tiktok/callback`;
 
   if (!clientKey || clientKey === "your_tiktok_client_key_here") {

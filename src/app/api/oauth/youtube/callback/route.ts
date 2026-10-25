@@ -7,13 +7,12 @@ export async function GET(req: NextRequest) {
   const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "";
   const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
   const proto = req.headers.get("x-forwarded-proto") || (isLocal ? "http" : "https");
-  const baseUrl = host && !isLocal
+  const baseUrl = host
     ? `${proto}://${host}`
-    : (process.env.NEXT_PUBLIC_BASE_URL && !process.env.NEXT_PUBLIC_BASE_URL.includes("localhost")
-        ? process.env.NEXT_PUBLIC_BASE_URL
-        : "https://crm-konten.giestar.web.id");
+    : (process.env.NEXT_PUBLIC_BASE_URL || "https://crm-konten.giestar.web.id");
 
   if (error || !code) {
+    console.error("[YouTube Callback] Error received or code missing:", { error, code });
     return NextResponse.redirect(
       new URL(`/?oauth_error=${encodeURIComponent(error || "Kode otorisasi Google tidak ditemukan")}`, baseUrl)
     );
@@ -25,6 +24,7 @@ export async function GET(req: NextRequest) {
 
   try {
     // 1. Tukar auth code dengan token Google
+    console.log("[YouTube Callback] Exchanging code for token with redirectUri:", redirectUri);
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
 
     const tokenData = await tokenRes.json();
     if (tokenData.error) {
+      console.error("[YouTube Callback] Token exchange failed:", tokenData);
       return NextResponse.redirect(
         new URL(`/?oauth_error=${encodeURIComponent(tokenData.error_description || tokenData.error)}`, baseUrl)
       );
@@ -77,15 +78,16 @@ export async function GET(req: NextRequest) {
         channelId = userData.id || channelId;
         channelTitle = userData.name || "Akun Google YouTube";
         avatarUrl = userData.picture || "";
-        customHandle = userData.email ? `@${userData.email.split("@")[0]}` : "@youtube";
+        customHandle = userData.email ? `@${userData.email.split("@")[0]}` : `@${channelTitle.replace(/\s+/g, "").toLowerCase()}`;
       }
-    } catch {
-      // ignore
+    } catch (apiErr) {
+      console.error("[YouTube Callback] Error querying YouTube/Google userinfo:", apiErr);
     }
 
     const accountRowId = `acc-yt-${channelId}`;
 
     // 3. Simpan ke Supabase social_accounts (Wajib sertakan id PRIMARY KEY)
+    console.log("[YouTube Callback] Upserting social account:", { accountRowId, channelTitle, customHandle });
     const { error: dbError } = await supabaseServer.from("social_accounts").upsert(
       {
         id: accountRowId,
@@ -110,16 +112,18 @@ export async function GET(req: NextRequest) {
     );
 
     if (dbError) {
-      console.error("Supabase upsert error:", dbError);
+      console.error("[YouTube Callback] Supabase upsert error:", dbError);
       return NextResponse.redirect(
         new URL(`/?oauth_error=${encodeURIComponent(dbError.message)}`, baseUrl)
       );
     }
 
+    console.log("[YouTube Callback] Successfully saved YouTube account to Supabase!");
     return NextResponse.redirect(
       new URL(`/?connected=youtube&handle=${encodeURIComponent(channelTitle)}`, baseUrl)
     );
   } catch (err: any) {
+    console.error("[YouTube Callback] Unexpected error:", err);
     return NextResponse.redirect(
       new URL(`/?oauth_error=${encodeURIComponent(err.message || "Gagal menghubungkan YouTube")}`, baseUrl)
     );
