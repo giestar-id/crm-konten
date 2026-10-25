@@ -1,0 +1,2756 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Post Hub — Multi-Platform Posting & Content CRM</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        sidebar: '#FAFAFA',
+                        borderLight: '#EAEAEA',
+                        borderSubtle: '#F0F0F0',
+                        textMuted: '#737373',
+                        textDark: '#171717',
+                        badgeGreenBg: '#EAF5EE',
+                        badgeGreenText: '#2E7D47',
+                        badgeRedBg: '#FCECEC',
+                        badgeRedText: '#C93B3B',
+                        badgeAmberBg: '#FEF3C7',
+                        badgeAmberText: '#B45309',
+                        brandOrange: '#DF5835'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #171717;
+            background-color: #FFFFFF;
+            overflow-x: hidden;
+        }
+
+        /* Custom subtle scrollbars */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D4D4D4;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #A3A3A3;
+        }
+
+        /* Smooth transitions for interactive elements */
+        .bar-segment, .heatmap-cell, .mini-bar, .kanban-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .bar-group:hover .bar-segment {
+            opacity: 0.85;
+        }
+        .heatmap-cell:hover {
+            transform: scale(1.18);
+            z-index: 10;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+        }
+        
+        /* Custom Tooltip */
+        #custom-tooltip {
+            pointer-events: none;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+
+        /* View transition animation */
+        .page-view {
+            animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Drag and Drop outline animation */
+        .dropzone-active {
+            border-color: #171717 !important;
+            background-color: #F5F5F5 !important;
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden bg-white select-none">
+
+    <!-- Floating Tooltip for Charts & Metrics -->
+    <div id="custom-tooltip" class="fixed z-50 opacity-0 bg-neutral-900 text-white text-xs px-2.5 py-1.5 rounded-md shadow-lg transform -translate-y-2 pointer-events-none">
+        <span id="tooltip-text"></span>
+    </div>
+
+    <!-- Universal Modal Backdrop & Container -->
+    <div id="universal-modal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center p-4 backdrop-blur-[1px]">
+        <div id="modal-container-card" class="bg-white border border-borderLight rounded-2xl max-w-lg w-full p-6 shadow-2xl transform transition-all max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4 border-b border-borderLight pb-3">
+                <h3 id="modal-title" class="text-base font-semibold text-neutral-900">Modal Title</h3>
+                <button onclick="closeModal()" class="p-1 rounded-lg text-neutral-400 hover:text-neutral-800 hover:bg-neutral-100 transition-colors">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div id="modal-body" class="space-y-4 text-xs text-neutral-700">
+                <!-- Dynamic Modal Content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Publish Simulation Drawer / Modal (P0 Kebutuhan Inti PRD) -->
+    <div id="publish-progress-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white border border-borderLight rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5">
+            <div class="flex items-start justify-between border-b border-borderLight pb-4">
+                <div>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-neutral-100 text-neutral-800">Job Runner • Parallel Queue</span>
+                    <h3 class="text-base font-semibold text-neutral-900 mt-1" id="publish-job-title">Publishing "5 AI Tools That Save 20 Hours/Week"</h3>
+                    <p class="text-xs text-textMuted" id="publish-job-meta">Idempotency Key: <span class="font-mono text-[11px] text-neutral-800" id="publish-idempotency-key">sph-job-8491-a</span></p>
+                </div>
+                <button onclick="closePublishModal()" class="p-1 rounded-lg text-neutral-400 hover:text-neutral-800 hover:bg-neutral-100 transition-colors">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Global Job Progress Bar -->
+            <div>
+                <div class="flex justify-between text-xs font-medium mb-1.5">
+                    <span id="job-overall-status" class="text-neutral-800">Dispatched jobs across 4 platforms...</span>
+                    <span id="job-overall-percent" class="font-semibold text-neutral-900">25%</span>
+                </div>
+                <div class="h-2 bg-neutral-200 rounded-full overflow-hidden">
+                    <div id="job-progress-bar-fill" class="h-full bg-neutral-900 transition-all duration-300 w-1/4"></div>
+                </div>
+            </div>
+
+            <!-- Platform-Specific Target Progress Cards -->
+            <div class="space-y-3 pt-1" id="publish-targets-list">
+                <!-- Dynamically populated by JS -->
+            </div>
+
+            <div class="border-t border-borderLight pt-4 flex items-center justify-between">
+                <span class="text-[11px] text-textMuted flex items-center gap-1.5">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-neutral-700"></i>
+                    Partial success safety: failures do not block other platforms
+                </span>
+                <button onclick="closePublishModal()" id="btn-finish-publish" class="px-4 py-2 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 transition-colors">
+                    Done & View Posts
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="sidebar-backdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/30 z-30 hidden lg:hidden transition-opacity"></div>
+
+    <!-- ==================== LEFT SIDEBAR ==================== -->
+    <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-[240px] bg-sidebar border-r border-borderLight flex flex-col justify-between transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out shrink-0">
+        
+        <!-- Top Logo & Navigation -->
+        <div class="overflow-y-auto">
+            <!-- Brand Header -->
+            <div class="h-16 px-5 flex items-center justify-between border-b border-borderLight/60">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-neutral-900 text-white flex items-center justify-center font-bold text-xs tracking-wider">
+                        SPH
+                    </div>
+                    <div>
+                        <span class="text-sm font-bold tracking-tight text-neutral-900 leading-none block">Social Post Hub</span>
+                        <span class="text-[10px] text-textMuted tracking-wider font-medium">CONTENT CRM</span>
+                    </div>
+                </div>
+                <button onclick="showToast('Sidebar view locked')" title="Sidebar View" class="w-6 h-6 rounded bg-neutral-200/70 hover:bg-neutral-300/70 flex items-center justify-center text-neutral-500 transition-colors">
+                    <i data-lucide="code" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+
+            <!-- Primary Action: Quick Post Button -->
+            <div class="p-3">
+                <button onclick="switchPage('compose', document.querySelector('[data-page=compose]'))" class="w-full py-2.5 px-3 bg-neutral-900 text-white text-xs font-medium rounded-lg hover:bg-neutral-800 transition-all shadow-xs flex items-center justify-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>Create Post</span>
+                </button>
+            </div>
+
+            <!-- Main Navigation List -->
+            <nav class="px-3 py-1 space-y-1">
+                <a href="#" data-page="dashboard" onclick="switchPage('dashboard', this); return false;" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium bg-[#EFEFEF] text-neutral-900 transition-colors">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 stroke-[2]"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="#" data-page="compose" onclick="switchPage('compose', this); return false;" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                    <span>Composer & Publish</span>
+                </a>
+
+                <a href="#" data-page="pipeline" onclick="switchPage('pipeline', this); return false;" class="nav-item flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="kanban-square" class="w-4 h-4"></i>
+                        <span>Content Pipeline</span>
+                    </div>
+                    <span id="sidebar-pipeline-badge" class="px-1.5 py-0.5 text-[10px] font-semibold bg-neutral-200 text-neutral-800 rounded-md">8</span>
+                </a>
+
+                <a href="#" data-page="calendar" onclick="switchPage('calendar', this); return false;" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                    <span>Calendars</span>
+                </a>
+
+                <a href="#" data-page="notifications" onclick="switchPage('notifications', this); return false;" class="nav-item flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="bell" class="w-4 h-4"></i>
+                        <span>Notifications</span>
+                    </div>
+                    <span id="sidebar-notif-badge" class="px-1.5 py-0.5 text-[10px] font-semibold bg-neutral-900 text-white rounded-full">3</span>
+                </a>
+            </nav>
+
+            <!-- Divider -->
+            <div class="my-3 border-t border-borderLight"></div>
+
+            <!-- Content Assets & CRM Database Section -->
+            <div class="px-3 py-1">
+                <p class="px-3 mb-2 text-[11px] font-semibold tracking-wider text-neutral-400 uppercase">DATABASE & STUDIO</p>
+                <nav class="space-y-1">
+                    <a href="#" data-page="analytics" onclick="switchPage('analytics', this); return false;" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                        <i data-lucide="trending-up" class="w-4 h-4"></i>
+                        <span>Analytics</span>
+                    </a>
+                    <a href="#" data-page="ideas" onclick="switchPage('ideas', this); return false;" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        <span>Ideas Bank & AI</span>
+                    </a>
+                    <a href="#" data-page="media" onclick="switchPage('media', this); return false;" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                        <i data-lucide="film" class="w-4 h-4"></i>
+                        <span>Media Assets</span>
+                    </a>
+                    <a href="#" data-page="contacts" onclick="switchPage('contacts', this); return false;" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                        <i data-lucide="handshake" class="w-4 h-4"></i>
+                        <span>Sponsors & CRM</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Divider -->
+            <div class="my-3 border-t border-borderLight"></div>
+
+            <!-- Connected Social Accounts & Settings -->
+            <nav class="px-3 py-1 space-y-1">
+                <a href="#" data-page="accounts" onclick="switchPage('accounts', this); return false;" class="nav-item flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="share-2" class="w-4 h-4"></i>
+                        <span>Social Accounts</span>
+                    </div>
+                    <span class="w-2 h-2 rounded-full bg-emerald-500" title="4 Accounts Connected"></span>
+                </a>
+                <a href="#" data-page="settings" onclick="switchPage('settings', this); return false;" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Bottom Workspace Switcher (PRD Section 6.2) -->
+        <div class="p-3 border-t border-borderLight shrink-0 bg-sidebar">
+            <button onclick="cycleWorkspaceTeam()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-neutral-200/60 transition-colors">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div id="team-avatar" class="w-6 h-6 rounded bg-neutral-900 flex items-center justify-center text-xs font-semibold text-white shrink-0">
+                        T
+                    </div>
+                    <div class="text-left min-w-0">
+                        <span id="team-name" class="text-[13px] font-medium text-neutral-900 block truncate">Tech Creator Brand</span>
+                        <span class="text-[10px] text-textMuted block">4 Accounts • WIB</span>
+                    </div>
+                </div>
+                <i data-lucide="chevrons-up-down" class="w-4 h-4 text-neutral-500 shrink-0"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        <!-- TOP NAVIGATION BAR -->
+        <header class="h-16 border-b border-borderLight bg-white px-4 lg:px-7 flex items-center justify-between shrink-0">
+            
+            <!-- Left: Mobile Menu Trigger + Global Search -->
+            <div class="flex items-center gap-3 flex-1 max-w-md">
+                <button onclick="toggleMobileSidebar()" class="lg:hidden p-2 rounded-lg border border-borderLight text-neutral-600 hover:bg-neutral-100">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+
+                <div class="relative w-full max-w-[320px]">
+                    <i data-lucide="search" class="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input 
+                        id="global-search"
+                        type="text" 
+                        oninput="handleGlobalSearch(this.value)"
+                        placeholder="Search posts, ideas, or accounts..." 
+                        class="w-full pl-9 pr-16 py-1.5 text-[13px] bg-white border border-borderLight rounded-lg focus:outline-none focus:border-neutral-500 text-neutral-800 placeholder-neutral-400 transition-colors"
+                    >
+                    <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        <kbd class="px-1.5 py-0.5 text-[10px] font-medium text-neutral-500 bg-neutral-100 rounded border border-neutral-200/80">⌘</kbd>
+                        <kbd class="px-1.5 py-0.5 text-[10px] font-medium text-neutral-500 bg-neutral-100 rounded border border-neutral-200/80">F</kbd>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Timezone Tag, Help Center & User Profile -->
+            <div class="flex items-center gap-5">
+                <div class="hidden md:flex items-center gap-1.5 text-xs text-textMuted bg-neutral-100 px-2.5 py-1 rounded-md">
+                    <i data-lucide="clock" class="w-3.5 h-3.5 text-neutral-500"></i>
+                    <span>Asia/Jakarta (WIB)</span>
+                </div>
+
+                <button onclick="openHelpCenterModal()" class="flex items-center gap-2 text-[13px] font-medium text-textMuted hover:text-neutral-900 transition-colors">
+                    <i data-lucide="help-circle" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Help Center</span>
+                </button>
+
+                <!-- Profile Dropdown -->
+                <div class="relative">
+                    <button onclick="toggleDropdown('profile-menu')" class="flex items-center gap-2 text-[13px] font-semibold text-neutral-900 hover:text-neutral-700 transition-colors">
+                        <span id="header-username">Aji S.</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-neutral-600"></i>
+                    </button>
+                    <div id="profile-menu" class="hidden absolute right-0 mt-2 w-52 bg-white border border-borderLight rounded-xl shadow-xl py-1 z-50">
+                        <div class="px-4 py-2 border-b border-borderLight">
+                            <p class="text-xs font-semibold text-neutral-900">Aji Subekti</p>
+                            <p class="text-[11px] text-textMuted">Solo Creator (Owner)</p>
+                        </div>
+                        <a href="#" onclick="switchPage('settings', document.querySelector('[data-page=settings]')); toggleDropdown('profile-menu'); return false;" class="block px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-100">Workspace Settings</a>
+                        <a href="#" onclick="switchPage('accounts', document.querySelector('[data-page=accounts]')); toggleDropdown('profile-menu'); return false;" class="block px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-100">Manage OAuth Connections</a>
+                        <a href="#" onclick="switchPage('notifications', document.querySelector('[data-page=notifications]')); toggleDropdown('profile-menu'); return false;" class="block px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-100">Job Logs & Alerts</a>
+                        <div class="my-1 border-t border-borderLight"></div>
+                        <a href="#" onclick="showToast('Signed out of session'); toggleDropdown('profile-menu'); return false;" class="block px-4 py-2 text-xs text-red-600 hover:bg-neutral-100">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ==================== SPA SCROLLABLE BODY ==================== -->
+        <main class="flex-1 overflow-y-auto px-4 lg:px-7 py-6">
+            <div class="max-w-[1280px] mx-auto">
+
+                <!-- =====================================================================
+                     PAGE 1: DASHBOARD (EXACT MINIMALIST REFERENCE AESTHETIC)
+                ====================================================================== -->
+                <section id="page-dashboard" class="page-view">
+                    <div class="flex items-center justify-between mb-5">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Dashboard</h1>
+                            <p class="text-xs text-textMuted">Overview of cross-platform distribution, pipeline velocity, and publishing consistency.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="switchPage('compose', document.querySelector('[data-page=compose]'))" class="px-3.5 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 transition-colors flex items-center gap-1.5 shadow-2xs">
+                                <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                                <span>Publish Now</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
+                        <!-- LEFT & CENTER COLUMN (8 Cols) -->
+                        <div class="xl:col-span-8 space-y-5">
+                            <!-- ROW 1: Monthly Post Goal & Aggregate Views -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <!-- Card 1: Monthly Post Progress Donut -->
+                                <div class="border border-borderLight rounded-xl p-5 bg-white flex items-center justify-between hover:border-neutral-300 transition-colors">
+                                    <div class="flex items-center gap-5">
+                                        <div class="relative w-[86px] h-[86px] flex items-center justify-center shrink-0">
+                                            <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                                                <circle cx="50" cy="50" r="38" fill="none" stroke="#E5E5E5" stroke-width="14" />
+                                                <circle id="goal-donut" cx="50" cy="50" r="38" fill="none" stroke="#111111" stroke-width="14" 
+                                                    stroke-dasharray="238.76" stroke-dashoffset="47.75" stroke-linecap="butt" 
+                                                    class="transition-all duration-700 ease-out" />
+                                            </svg>
+                                            <span class="absolute text-xs font-semibold text-neutral-900">80%</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-medium text-textMuted mb-1">Monthly Post Goal</p>
+                                            <h2 class="text-[22px] font-semibold tracking-tight text-neutral-900 leading-snug">48/60 Posts</h2>
+                                            <p class="text-xs text-textMuted mt-1">October 2026</p>
+                                        </div>
+                                    </div>
+                                    <button onclick="switchPage('pipeline', document.querySelector('[data-page=pipeline]'))" title="Go to Pipeline" class="w-7 h-7 rounded-full border border-neutral-700 flex items-center justify-center text-neutral-800 hover:bg-neutral-900 hover:text-white transition-colors self-start mt-1 shrink-0">
+                                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Card 2: Total Multi-Platform Views Sparkline -->
+                                <div class="border border-borderLight rounded-xl p-5 bg-white flex items-center justify-between gap-4 hover:border-neutral-300 transition-colors">
+                                    <div class="w-[125px] h-[82px] shrink-0 relative">
+                                        <svg viewBox="0 0 130 85" class="w-full h-full overflow-visible">
+                                            <defs>
+                                                <linearGradient id="expGrad" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stop-color="#171717" stop-opacity="0.16"/>
+                                                    <stop offset="100%" stop-color="#171717" stop-opacity="0.0"/>
+                                                </linearGradient>
+                                            </defs>
+                                            <line x1="10" y1="10" x2="10" y2="80" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="2.5,2.5" />
+                                            <line x1="33" y1="10" x2="33" y2="80" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="2.5,2.5" />
+                                            <line x1="56" y1="10" x2="56" y2="80" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="2.5,2.5" />
+                                            <line x1="79" y1="10" x2="79" y2="80" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="2.5,2.5" />
+                                            <line x1="102" y1="10" x2="102" y2="80" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="2.5,2.5" />
+                                            <line x1="122" y1="10" x2="122" y2="80" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="2.5,2.5" />
+                                            <path d="M5,45 L25,32 L58,18 L82,24 L103,12 L114,8 L123,5 L123,80 L5,80 Z" fill="url(#expGrad)" />
+                                            <path d="M5,45 L25,32 L58,18 L82,24 L103,12 L114,8 L123,5" fill="none" stroke="#111111" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-medium text-textMuted mb-1">Total Multi-Platform Views</p>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <h2 class="text-[22px] font-semibold tracking-tight text-neutral-900 leading-snug">842.5k</h2>
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-badgeGreenBg text-badgeGreenText">
+                                                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>
+                                                18.4%
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-textMuted mt-1">This Month</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ROW 2: Cross-Platform Posting Activity (Stacked Bars) -->
+                            <div class="border border-borderLight rounded-xl p-5 bg-white">
+                                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5">
+                                    <div>
+                                        <p class="text-xs font-medium text-textMuted mb-1.5">Weekly Publishing Output</p>
+                                        <div class="flex items-center gap-2.5">
+                                            <h2 id="task-summary-total" class="text-[22px] font-semibold tracking-tight text-neutral-900">28 Published Posts</h2>
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-badgeGreenBg text-badgeGreenText">
+                                                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>
+                                                +12%
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-textMuted mt-1">This Week • Across 4 Platforms</p>
+                                    </div>
+                                    <div class="flex items-center gap-2.5 self-start sm:mt-4">
+                                        <button onclick="cycleDateRange(this)" class="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 flex items-center gap-2 hover:bg-neutral-50 transition-colors">
+                                            <span>Sun, 19 Oct - Sat, 25 Oct</span>
+                                            <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                        <button onclick="cycleTimeframe(this, 'task-summary-total', ['28 Published Posts', '112 Published Posts', '480 Published Posts'])" class="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 flex items-center gap-2 hover:bg-neutral-50 transition-colors">
+                                            <span>Week</span>
+                                            <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Platform Legend with Grayscale Monochrome tones -->
+                                <div class="flex flex-wrap items-center justify-center gap-6 mb-6 text-xs font-medium text-neutral-800">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-[#0A0A0A]"></span>
+                                        <span>YouTube Shorts</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-[#4A4A4A]"></span>
+                                        <span>Instagram Reels</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-[#787878]"></span>
+                                        <span>TikTok Video</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-[#D6D6D6]"></span>
+                                        <span>Facebook Page</span>
+                                    </div>
+                                </div>
+
+                                <div class="relative pl-8 pr-2 pt-2 pb-7">
+                                    <div class="h-[190px] flex flex-col justify-between relative">
+                                        <div class="relative w-full border-b border-dashed border-neutral-200">
+                                            <span class="absolute -left-8 -top-2 text-[11px] text-neutral-600 font-medium">10</span>
+                                        </div>
+                                        <div class="relative w-full border-b border-dashed border-neutral-200">
+                                            <span class="absolute -left-8 -top-2 text-[11px] text-neutral-600 font-medium">7</span>
+                                        </div>
+                                        <div class="relative w-full border-b border-dashed border-neutral-200">
+                                            <span class="absolute -left-8 -top-2 text-[11px] text-neutral-600 font-medium">3</span>
+                                        </div>
+                                        <div class="relative w-full border-b border-dashed border-neutral-200">
+                                            <span class="absolute -left-7 -top-2 text-[11px] text-neutral-600 font-medium">0</span>
+                                        </div>
+                                        <div id="stacked-bars-container" class="absolute inset-x-0 -top-2 -bottom-3 grid grid-cols-7 items-end justify-items-center z-10"></div>
+                                    </div>
+                                    <div class="grid grid-cols-7 text-center mt-5 text-[11px] font-medium text-neutral-800">
+                                        <span>Sun, 19</span>
+                                        <span>Mon, 20</span>
+                                        <span>Tue, 21</span>
+                                        <span>Wed, 22</span>
+                                        <span>Thu, 23</span>
+                                        <span>Fri, 24</span>
+                                        <span>Sat, 25</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ROW 3: Engagement Growth & Content Allocation -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <!-- Card 4: Total Engagements Trend Curve -->
+                                <div class="border border-borderLight rounded-xl p-5 bg-white flex flex-col justify-between">
+                                    <div class="flex items-start justify-between mb-4">
+                                        <div>
+                                            <p class="text-xs font-medium text-textMuted mb-1">Total Engagements</p>
+                                            <div class="flex items-center gap-2">
+                                                <h2 id="revenue-total" class="text-[22px] font-semibold tracking-tight text-neutral-900">56,120</h2>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-badgeGreenBg text-badgeGreenText">
+                                                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>
+                                                    14.2%
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button onclick="cycleTimeframe(this, 'revenue-total', ['56,120', '14,800', '192,400'])" class="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 flex items-center gap-1.5 hover:bg-neutral-50 transition-colors">
+                                            <span>Month</span>
+                                            <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                    <div class="mt-2">
+                                        <div class="h-[115px] w-full">
+                                            <svg viewBox="0 0 320 115" class="w-full h-full overflow-visible">
+                                                <defs>
+                                                    <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="0%" stop-color="#171717" stop-opacity="0.14"/>
+                                                        <stop offset="100%" stop-color="#171717" stop-opacity="0.0"/>
+                                                    </linearGradient>
+                                                </defs>
+                                                <line x1="16" y1="8" x2="16" y2="108" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="3,3" />
+                                                <line x1="88" y1="8" x2="88" y2="108" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="3,3" />
+                                                <line x1="160" y1="8" x2="160" y2="108" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="3,3" />
+                                                <line x1="232" y1="8" x2="232" y2="108" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="3,3" />
+                                                <line x1="304" y1="8" x2="304" y2="108" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="3,3" />
+                                                <path d="M2,68 L30,52 L60,40 L88,48 L122,35 L150,22 L175,28 L210,14 L236,18 L270,9 L298,12 L318,6 L318,108 L2,108 Z" fill="url(#revGrad)" />
+                                                <path d="M2,68 L30,52 L60,40 L88,48 L122,35 L150,22 L175,28 L210,14 L236,18 L270,9 L298,12 L318,6" fill="none" stroke="#111111" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
+                                            </svg>
+                                        </div>
+                                        <div class="flex justify-between px-1 mt-2 text-[11px] font-medium text-neutral-800">
+                                            <span>Week 1</span><span>Week 2</span><span>Week 3</span><span>Week 4</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card 5: Content Distribution Allocation -->
+                                <div class="border border-borderLight rounded-xl p-5 bg-white flex flex-col justify-between">
+                                    <div class="flex items-start justify-between mb-4">
+                                        <div>
+                                            <p class="text-xs font-medium text-textMuted mb-1">Platform Share Allocation</p>
+                                            <div class="flex items-center gap-2">
+                                                <h2 id="allocation-total" class="text-[22px] font-semibold tracking-tight text-neutral-900">4 Platforms</h2>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-badgeGreenBg text-badgeGreenText">
+                                                    100% Synced
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button onclick="cycleTimeframe(this, 'allocation-total', ['4 Platforms', 'Active SPH', 'Q4 Strategy'])" class="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 flex items-center gap-1.5 hover:bg-neutral-50 transition-colors">
+                                            <span>Month</span>
+                                            <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                    <div class="space-y-3.5 my-1">
+                                        <div class="grid grid-cols-12 items-center gap-2">
+                                            <span class="col-span-4 text-[11px] font-medium text-neutral-800">YouTube Shorts</span>
+                                            <div class="col-span-8 h-3.5 bg-[#D9D9D9] rounded-[3px] overflow-hidden cursor-pointer" onmousemove="showTooltip(event, 'YouTube: 42% share (354k views)')" onmouseleave="hideTooltip()">
+                                                <div class="h-full bg-[#0A0A0A] rounded-[3px] w-[42%]"></div>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-12 items-center gap-2">
+                                            <span class="col-span-4 text-[11px] font-medium text-neutral-800">TikTok Video</span>
+                                            <div class="col-span-8 h-3.5 bg-[#D9D9D9] rounded-[3px] overflow-hidden cursor-pointer" onmousemove="showTooltip(event, 'TikTok: 31% share (261k views)')" onmouseleave="hideTooltip()">
+                                                <div class="h-full bg-[#0A0A0A] rounded-[3px] w-[31%]"></div>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-12 items-center gap-2">
+                                            <span class="col-span-4 text-[11px] font-medium text-neutral-800">Instagram Reels</span>
+                                            <div class="col-span-8 h-3.5 bg-[#D9D9D9] rounded-[3px] overflow-hidden cursor-pointer" onmousemove="showTooltip(event, 'Instagram: 19% share (160k views)')" onmouseleave="hideTooltip()">
+                                                <div class="h-full bg-[#0A0A0A] rounded-[3px] w-[19%]"></div>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-12 items-center gap-2">
+                                            <span class="col-span-4 text-[11px] font-medium text-neutral-800">Facebook Page</span>
+                                            <div class="col-span-8 h-3.5 bg-[#D9D9D9] rounded-[3px] overflow-hidden cursor-pointer" onmousemove="showTooltip(event, 'Facebook: 8% share (67k views)')" onmouseleave="hideTooltip()">
+                                                <div class="h-full bg-[#0A0A0A] rounded-[3px] w-[8%]"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-12 gap-2 mt-3">
+                                        <div class="col-span-4"></div>
+                                        <div class="col-span-8 flex justify-between text-[11px] font-medium text-neutral-800">
+                                            <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT COLUMN (4 Cols) -->
+                        <div class="xl:col-span-4 space-y-5">
+                            <!-- Right Card 1: 28-Day Posting Consistency Heatmap -->
+                            <div class="border border-borderLight rounded-xl p-5 bg-white">
+                                <div class="flex items-start justify-between mb-5">
+                                    <div>
+                                        <p class="text-xs font-medium text-textMuted mb-1">Consistency Tracker</p>
+                                        <h2 id="avg-task-title" class="text-[22px] font-semibold tracking-tight text-neutral-900">± 1.8 Posts/Day</h2>
+                                        <p class="text-xs text-textMuted mt-1">28-Day Consistency Matrix</p>
+                                    </div>
+                                    <button onclick="cycleTimeframe(this, 'avg-task-title', ['± 1.8 Posts/Day', '± 2.4 Posts/Day', '± 12 Posts/Week'])" class="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 flex items-center gap-1.5 hover:bg-neutral-50 transition-colors">
+                                        <span>Month</span>
+                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-7 text-center text-[11px] font-medium text-neutral-700 mb-3">
+                                    <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                                </div>
+                                <div id="heatmap-grid" class="grid grid-cols-7 gap-y-2.5 justify-items-center mb-5"></div>
+                                <div class="flex items-center justify-between pt-1 text-[11px]">
+                                    <span class="text-textMuted leading-tight max-w-[135px]">Multi-platform sync streak: 16 days</span>
+                                    <div class="flex items-center gap-1.5 font-medium text-neutral-800">
+                                        <span>Less</span>
+                                        <span class="w-2.5 h-2.5 bg-[#D4D4D4] inline-block"></span>
+                                        <span class="w-2.5 h-2.5 bg-[#9E9E9E] inline-block"></span>
+                                        <span class="w-2.5 h-2.5 bg-[#474747] inline-block"></span>
+                                        <span class="w-2.5 h-2.5 bg-[#0A0A0A] inline-block"></span>
+                                        <span>More</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Card 2: Highlighted Viral Video -->
+                            <div class="border border-borderLight rounded-xl p-5 bg-white">
+                                <div class="flex items-center justify-between mb-4">
+                                    <span class="text-xs font-medium text-textMuted">Top Performing Content</span>
+                                    <button onmousemove="showTooltip(event, 'Top viral post of the week across YouTube & TikTok')" onmouseleave="hideTooltip()" class="text-neutral-400 hover:text-neutral-700 transition-colors">
+                                        <i data-lucide="info" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                                <div class="flex flex-col items-center text-center">
+                                    <div class="w-11 h-11 rounded-full bg-brandOrange flex items-center justify-center text-white text-base font-bold mb-2.5 shadow-sm">
+                                        <i data-lucide="play" class="w-5 h-5 fill-current"></i>
+                                    </div>
+                                    <h3 class="text-[14px] font-semibold text-neutral-900 leading-snug">5 AI Tools That Save 20 Hours/Week</h3>
+                                    <p class="text-[11px] text-textMuted mt-0.5">Shorts • Reels • TikTok • FB</p>
+                                    <div class="text-[28px] font-semibold text-neutral-900 tracking-tight mt-3 mb-1">248,600</div>
+                                    <p class="text-xs text-neutral-700 leading-relaxed max-w-[210px]">Total Combined Impressions & 94.2% completion rate</p>
+                                </div>
+                                <div id="company-bars" class="mt-5 pt-2 flex items-end justify-between gap-1.5 h-[50px] px-1"></div>
+                            </div>
+
+                            <!-- Right Card 3: Next Scheduled Post Quick Status -->
+                            <div class="border border-borderLight rounded-xl p-5 bg-white">
+                                <div class="flex items-center justify-between mb-2">
+                                    <p class="text-xs font-medium text-textMuted">Next Scheduled Queue</p>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-neutral-100 text-neutral-800">Today 19:00 WIB</span>
+                                </div>
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <h4 class="text-sm font-semibold text-neutral-900">Next.js 15 Full-Stack Tutorial Hook</h4>
+                                        <div class="flex items-center gap-1.5 mt-1.5">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                            <span class="text-[11px] text-textMuted">Ready for 4 platforms</span>
+                                        </div>
+                                    </div>
+                                    <button onclick="switchPage('calendar', document.querySelector('[data-page=calendar]'))" class="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors shrink-0">
+                                        View Schedule
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 2: COMPOSER & 1-CLICK PUBLISH (FITUR INTI - PRD 6.5)
+                ====================================================================== -->
+                <section id="page-compose" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Universal Composer</h1>
+                            <p class="text-xs text-textMuted mt-0.5">Upload once, configure metadata & per-platform overrides, then publish to 4 platforms simultaneously.</p>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            <button onclick="saveComposerDraft()" class="px-3.5 py-1.5 rounded-lg border border-borderLight text-xs font-medium text-neutral-800 hover:bg-neutral-100 transition-colors flex items-center gap-1.5">
+                                <i data-lucide="bookmark" class="w-3.5 h-3.5"></i>
+                                <span>Save to Pipeline</span>
+                            </button>
+                            <button onclick="openScheduleModal()" class="px-3.5 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 hover:bg-neutral-50 transition-colors flex items-center gap-1.5">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                                <span>Schedule</span>
+                            </button>
+                            <button onclick="triggerPublishNow()" class="px-4 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 transition-colors flex items-center gap-1.5 shadow-sm">
+                                <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                                <span>Publish Now (1-Click)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        <!-- LEFT COLUMN: Media Upload & Base Metadata (7 Cols) -->
+                        <div class="lg:col-span-7 space-y-5">
+                            <!-- Video Upload Zone (Resumable TUS Simulation - PRD MED-1) -->
+                            <div class="border border-borderLight rounded-xl p-5 bg-white">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-xs font-semibold text-neutral-900 flex items-center gap-2">
+                                        <i data-lucide="video" class="w-4 h-4"></i>
+                                        Media Asset (Video / Reel)
+                                    </span>
+                                    <button onclick="pickFromMediaLibrary()" class="text-xs text-neutral-700 font-medium hover:underline flex items-center gap-1">
+                                        <i data-lucide="folder" class="w-3.5 h-3.5"></i>
+                                        Browse Library
+                                    </button>
+                                </div>
+
+                                <div id="media-dropzone" onclick="document.getElementById('file-video-input').click()" class="border-2 border-dashed border-borderLight hover:border-neutral-400 rounded-xl p-6 text-center cursor-pointer transition-colors bg-sidebar">
+                                    <input type="file" id="file-video-input" class="hidden" accept="video/mp4,video/quicktime" onchange="handleVideoUpload(event)">
+                                    <div class="w-10 h-10 rounded-full bg-neutral-200/80 mx-auto flex items-center justify-center text-neutral-600 mb-2.5">
+                                        <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                                    </div>
+                                    <p class="text-xs font-semibold text-neutral-900" id="upload-status-heading">Click to upload video or drag and drop</p>
+                                    <p class="text-[11px] text-textMuted mt-1" id="upload-status-sub">MP4, MOV up to 500MB • Recommended vertical 9:16 (1080x1920) for Shorts/Reels/TikTok</p>
+
+                                    <!-- Upload Progress Bar (Simulated Resumable Upload) -->
+                                    <div id="upload-progress-container" class="hidden mt-4 pt-3 border-t border-borderLight">
+                                        <div class="flex justify-between text-[11px] font-medium text-neutral-700 mb-1">
+                                            <span id="upload-filename">video_snippet_v1.mp4 (42.8 MB)</span>
+                                            <span id="upload-percent">100% Uploaded</span>
+                                        </div>
+                                        <div class="h-1.5 bg-neutral-200 rounded-full overflow-hidden">
+                                            <div id="upload-bar" class="h-full bg-neutral-900 w-full transition-all duration-300"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Technical Validation Badges (PRD MED-2) -->
+                                <div class="mt-3.5 flex flex-wrap items-center gap-2 pt-3 border-t border-borderLight text-[11px]">
+                                    <span class="px-2 py-0.5 rounded bg-badgeGreenBg text-badgeGreenText font-medium flex items-center gap-1">
+                                        <i data-lucide="check" class="w-3 h-3"></i> Aspect Ratio: 9:16 Vertical
+                                    </span>
+                                    <span class="px-2 py-0.5 rounded bg-badgeGreenBg text-badgeGreenText font-medium flex items-center gap-1">
+                                        <i data-lucide="check" class="w-3 h-3"></i> Duration: 0:48 (Optimal)
+                                    </span>
+                                    <span class="px-2 py-0.5 rounded bg-neutral-100 text-neutral-800 font-medium">
+                                        Codec: H.264 / AAC
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Base Content Form (Title, Universal Caption, Hashtags) -->
+                            <div class="border border-borderLight rounded-xl p-5 bg-white space-y-4">
+                                <div>
+                                    <div class="flex items-center justify-between mb-1.5">
+                                        <label class="block text-xs font-semibold text-neutral-900">Base Post Title</label>
+                                        <span class="text-[11px] text-textMuted" id="title-char-count">42 / 100</span>
+                                    </div>
+                                    <input 
+                                        id="composer-title" 
+                                        type="text" 
+                                        value="5 AI Tools That Save 20 Hours/Week in 2026" 
+                                        oninput="updateCharCount('composer-title', 'title-char-count', 100)"
+                                        class="w-full px-3.5 py-2 text-xs border border-borderLight rounded-lg focus:outline-none focus:border-neutral-600 font-medium text-neutral-900"
+                                    >
+                                </div>
+
+                                <div>
+                                    <div class="flex items-center justify-between mb-1.5">
+                                        <label class="block text-xs font-semibold text-neutral-900">Universal Caption</label>
+                                        <div class="flex items-center gap-2">
+                                            <button onclick="insertTemplateText()" class="text-[11px] text-neutral-700 hover:text-neutral-900 font-medium flex items-center gap-1">
+                                                <i data-lucide="file-text" class="w-3 h-3"></i> Template Preset
+                                            </button>
+                                            <span class="text-[11px] text-textMuted" id="caption-char-count">194 / 2,200</span>
+                                        </div>
+                                    </div>
+                                    <textarea 
+                                        id="composer-caption" 
+                                        rows="5" 
+                                        oninput="updateCharCount('composer-caption', 'caption-char-count', 2200)"
+                                        class="w-full p-3 text-xs border border-borderLight rounded-lg focus:outline-none focus:border-neutral-600 text-neutral-800 leading-relaxed"
+                                    >Stop doing repetitive manual coding and content distribution. Here are 5 AI developer tools you must adopt in 2026 to double your engineering output.
+
+Save this video for later and check the link in bio!</textarea>
+                                </div>
+
+                                <!-- Hashtag Presets Picker (PRD CRM-5) -->
+                                <div>
+                                    <label class="block text-xs font-medium text-textMuted mb-1.5">Hashtags Presets</label>
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <button onclick="addHashtag('#coding #developer #ai #programming')" class="px-2.5 py-1 rounded-md bg-sidebar border border-borderLight text-[11px] font-medium text-neutral-800 hover:border-neutral-400">
+                                            + #tech-devs
+                                        </button>
+                                        <button onclick="addHashtag('#productivity #aitools #solopreneur #worksmart')" class="px-2.5 py-1 rounded-md bg-sidebar border border-borderLight text-[11px] font-medium text-neutral-800 hover:border-neutral-400">
+                                            + #productivity
+                                        </button>
+                                        <button onclick="addHashtag('#reelsviral #fyp #shorts #contentcreator')" class="px-2.5 py-1 rounded-md bg-sidebar border border-borderLight text-[11px] font-medium text-neutral-800 hover:border-neutral-400">
+                                            + #viral-growth
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT COLUMN: Platform Selectors & Platform-Specific Overrides (5 Cols) -->
+                        <div class="lg:col-span-5 space-y-5">
+                            <!-- Platform Target Selectors (4 Platforms) -->
+                            <div class="border border-borderLight rounded-xl p-5 bg-white">
+                                <h3 class="text-xs font-semibold text-neutral-900 mb-3">Publishing Target Accounts</h3>
+                                <div class="space-y-2.5">
+                                    <label class="flex items-center justify-between p-2.5 rounded-lg border border-borderLight hover:bg-neutral-50 cursor-pointer">
+                                        <div class="flex items-center gap-3">
+                                            <input type="checkbox" checked id="target-yt" class="accent-neutral-900 w-4 h-4 rounded">
+                                            <div>
+                                                <p class="text-xs font-semibold text-neutral-900">YouTube Channel</p>
+                                                <p class="text-[11px] text-textMuted">Tech Pulse Studio (Shorts)</p>
+                                            </div>
+                                        </div>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-neutral-900 text-white">YT</span>
+                                    </label>
+
+                                    <label class="flex items-center justify-between p-2.5 rounded-lg border border-borderLight hover:bg-neutral-50 cursor-pointer">
+                                        <div class="flex items-center gap-3">
+                                            <input type="checkbox" checked id="target-ig" class="accent-neutral-900 w-4 h-4 rounded">
+                                            <div>
+                                                <p class="text-xs font-semibold text-neutral-900">Instagram Creator</p>
+                                                <p class="text-[11px] text-textMuted">@techpulse.id (Reels)</p>
+                                            </div>
+                                        </div>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-neutral-900 text-white">IG</span>
+                                    </label>
+
+                                    <label class="flex items-center justify-between p-2.5 rounded-lg border border-borderLight hover:bg-neutral-50 cursor-pointer">
+                                        <div class="flex items-center gap-3">
+                                            <input type="checkbox" checked id="target-tt" class="accent-neutral-900 w-4 h-4 rounded">
+                                            <div>
+                                                <p class="text-xs font-semibold text-neutral-900">TikTok Business</p>
+                                                <p class="text-[11px] text-textMuted">@techpulse_official</p>
+                                            </div>
+                                        </div>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-neutral-900 text-white">TT</span>
+                                    </label>
+
+                                    <label class="flex items-center justify-between p-2.5 rounded-lg border border-borderLight hover:bg-neutral-50 cursor-pointer">
+                                        <div class="flex items-center gap-3">
+                                            <input type="checkbox" checked id="target-fb" class="accent-neutral-900 w-4 h-4 rounded">
+                                            <div>
+                                                <p class="text-xs font-semibold text-neutral-900">Facebook Page</p>
+                                                <p class="text-[11px] text-textMuted">Tech Pulse ID</p>
+                                            </div>
+                                        </div>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-neutral-900 text-white">FB</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Platform Specific Overrides (PRD PUB-3 & PUB-8) -->
+                            <div class="border border-borderLight rounded-xl p-5 bg-white">
+                                <div class="flex items-center justify-between border-b border-borderLight pb-3 mb-4">
+                                    <h3 class="text-xs font-semibold text-neutral-900">Platform Overrides</h3>
+                                    <span class="text-[10px] text-textMuted">Customize per channel</span>
+                                </div>
+
+                                <!-- Platform Tabs for Override -->
+                                <div class="flex items-center gap-1 border-b border-borderLight pb-2 mb-4">
+                                    <button onclick="switchOverrideTab('yt', this)" class="override-tab px-2.5 py-1 rounded text-xs font-medium bg-neutral-900 text-white">YouTube</button>
+                                    <button onclick="switchOverrideTab('ig', this)" class="override-tab px-2.5 py-1 rounded text-xs font-medium text-textMuted hover:bg-neutral-100">Instagram</button>
+                                    <button onclick="switchOverrideTab('tt', this)" class="override-tab px-2.5 py-1 rounded text-xs font-medium text-textMuted hover:bg-neutral-100">TikTok</button>
+                                    <button onclick="switchOverrideTab('fb', this)" class="override-tab px-2.5 py-1 rounded text-xs font-medium text-textMuted hover:bg-neutral-100">Facebook</button>
+                                </div>
+
+                                <!-- YouTube Override Panel -->
+                                <div id="override-yt" class="override-panel space-y-3">
+                                    <div>
+                                        <label class="block text-[11px] font-medium text-neutral-700 mb-1">YouTube Title (SEO / Tags)</label>
+                                        <input type="text" id="override-yt-title" value="5 AI Tools That Save 20 Hours/Week #shorts #ai" class="w-full px-3 py-1.5 text-xs border border-borderLight rounded-lg">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-[11px] font-medium text-neutral-700 mb-1">Visibility</label>
+                                            <select class="w-full px-2.5 py-1.5 text-xs border border-borderLight rounded-lg">
+                                                <option>Public</option>
+                                                <option>Unlisted</option>
+                                                <option>Private</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-medium text-neutral-700 mb-1">Category</label>
+                                            <select class="w-full px-2.5 py-1.5 text-xs border border-borderLight rounded-lg">
+                                                <option>Science & Technology</option>
+                                                <option>Education</option>
+                                                <option>Howto & Style</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Instagram Override Panel -->
+                                <div id="override-ig" class="override-panel hidden space-y-3">
+                                    <div class="flex items-center justify-between py-1">
+                                        <div>
+                                            <p class="text-xs font-medium text-neutral-900">Share to Feed</p>
+                                            <p class="text-[10px] text-textMuted">Show Reels in main profile grid</p>
+                                        </div>
+                                        <input type="checkbox" checked class="accent-neutral-900 w-4 h-4">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-medium text-neutral-700 mb-1">Custom Cover Frame</label>
+                                        <select class="w-full px-2.5 py-1.5 text-xs border border-borderLight rounded-lg">
+                                            <option>Frame at 0:01s (Hook Slide)</option>
+                                            <option>Upload custom cover JPEG</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- TikTok Override Panel -->
+                                <div id="override-tt" class="override-panel hidden space-y-2.5">
+                                    <div class="flex items-center justify-between text-xs py-1">
+                                        <span>Allow Duet & Stitch</span>
+                                        <input type="checkbox" checked class="accent-neutral-900 w-4 h-4">
+                                    </div>
+                                    <div class="flex items-center justify-between text-xs py-1">
+                                        <span>Allow Comments</span>
+                                        <input type="checkbox" checked class="accent-neutral-900 w-4 h-4">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-medium text-neutral-700 mb-1">Upload Mode</label>
+                                        <select class="w-full px-2.5 py-1.5 text-xs border border-borderLight rounded-lg">
+                                            <option>Direct Post (Public Instant)</option>
+                                            <option>Send to TikTok Inbox (Draft)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Facebook Override Panel -->
+                                <div id="override-fb" class="override-panel hidden space-y-3">
+                                    <div>
+                                        <label class="block text-[11px] font-medium text-neutral-700 mb-1">Facebook Page</label>
+                                        <select class="w-full px-2.5 py-1.5 text-xs border border-borderLight rounded-lg">
+                                            <option>Tech Pulse ID (Official Page)</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center justify-between text-xs py-1">
+                                        <span>Post as Facebook Reel</span>
+                                        <input type="checkbox" checked class="accent-neutral-900 w-4 h-4">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 3: CONTENT PIPELINE (CRM KONTEN - PRD 6.7)
+                ====================================================================== -->
+                <section id="page-pipeline" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Content Pipeline</h1>
+                            <p class="text-xs text-textMuted mt-0.5">End-to-end CRM workflow: Ide → Naskah → Produksi → Editing → Siap Posting → Terjadwal → Terbit → Dianalisis.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2.5">
+                            <div class="inline-flex rounded-lg border border-borderLight p-0.5 bg-sidebar">
+                                <button id="btn-pipeline-board" onclick="togglePipelineView('board')" class="px-3 py-1 rounded-md text-xs font-medium bg-white shadow-xs text-neutral-900">Board</button>
+                                <button id="btn-pipeline-list" onclick="togglePipelineView('list')" class="px-3 py-1 rounded-md text-xs font-medium text-textMuted hover:text-neutral-900">Table</button>
+                            </div>
+
+                            <select id="pipeline-pillar-filter" onchange="renderPipeline()" class="px-3 py-1.5 rounded-lg border border-borderLight text-xs font-medium text-neutral-800 focus:outline-none">
+                                <option value="All">All Content Pillars</option>
+                                <option value="Tech Reviews">Tech Reviews</option>
+                                <option value="Productivity">Productivity</option>
+                                <option value="Tutorials">Tutorials</option>
+                                <option value="Sponsorship">Sponsorship</option>
+                            </select>
+
+                            <button onclick="openNewPipelineCardModal()" class="px-3.5 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 transition-colors flex items-center gap-1.5 shadow-2xs">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                <span>New Content Item</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pipeline Kanban View (Horizontally Scrollable for 8 PRD Stages) -->
+                    <div id="pipeline-board-container" class="overflow-x-auto pb-4">
+                        <div id="pipeline-kanban-board" class="flex items-start gap-4 min-w-[1480px]">
+                            <!-- Populated dynamically by renderPipeline() -->
+                        </div>
+                    </div>
+
+                    <!-- Pipeline Table List View -->
+                    <div id="pipeline-list-container" class="hidden border border-borderLight rounded-xl bg-white overflow-x-auto">
+                        <!-- Populated by renderPipeline() -->
+                    </div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 4: CALENDARS & SCHEDULING (PRD 6.6)
+                ====================================================================== -->
+                <section id="page-calendar" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Publishing Calendar</h1>
+                            <p class="text-xs text-textMuted mt-0.5">October 2026 • Synchronized in Asia/Jakarta (WIB) timezone with AI peak posting slots.</p>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-xs text-neutral-600 bg-sidebar border border-borderLight px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-neutral-800"></i>
+                                Best Engagement Slot: <strong>19:00 WIB</strong>
+                            </span>
+                            <button onclick="openScheduleModal()" class="px-3.5 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 flex items-center gap-1.5 shadow-2xs">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                <span>Schedule Post</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
+                        <!-- 7-Col Month Grid (9 Cols) -->
+                        <div class="xl:col-span-9 border border-borderLight rounded-xl bg-white overflow-hidden">
+                            <div class="grid grid-cols-7 border-b border-borderLight bg-sidebar text-center py-2.5 text-xs font-semibold text-neutral-700">
+                                <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                            </div>
+                            <div id="calendar-days-grid" class="grid grid-cols-7 divide-x divide-y divide-borderLight"></div>
+                        </div>
+
+                        <!-- Upcoming Schedule Sidebar (3 Cols) -->
+                        <div class="xl:col-span-3 space-y-4">
+                            <div class="border border-borderLight rounded-xl p-5 bg-white">
+                                <div class="flex items-center justify-between mb-3 border-b border-borderLight pb-2">
+                                    <h3 class="text-sm font-semibold text-neutral-900">Upcoming Posts</h3>
+                                    <span class="text-[11px] text-textMuted">WIB Time</span>
+                                </div>
+                                <div id="upcoming-events-list" class="space-y-3"></div>
+                            </div>
+
+                            <!-- Optimal Posting Times Advice Card -->
+                            <div class="border border-borderLight rounded-xl p-4 bg-sidebar">
+                                <div class="flex items-center gap-2 text-xs font-semibold text-neutral-900 mb-1.5">
+                                    <i data-lucide="zap" class="w-4 h-4 text-neutral-800"></i>
+                                    Peak Audience Activity
+                                </div>
+                                <p class="text-[11px] text-textMuted leading-relaxed">
+                                    Based on 842k monthly views, audience retention peaks between <strong>18:30 - 20:30 WIB</strong> on weekdays.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 5: ANALYTICS & METRICS TRACKING (PRD 6.8)
+                ====================================================================== -->
+                <section id="page-analytics" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Cross-Platform Analytics</h1>
+                            <p class="text-xs text-textMuted mt-0.5">Unified performance insights, completion rates, and cross-channel benchmarks.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="inline-flex rounded-lg border border-borderLight p-0.5 bg-sidebar text-xs">
+                                <button onclick="setAnalyticsTimeframe('7d', this)" class="analytics-tf-btn px-2.5 py-1 rounded-md text-textMuted hover:text-neutral-900">7 Days</button>
+                                <button onclick="setAnalyticsTimeframe('30d', this)" class="analytics-tf-btn px-2.5 py-1 rounded-md bg-white shadow-xs font-medium text-neutral-900">30 Days</button>
+                                <button onclick="setAnalyticsTimeframe('all', this)" class="analytics-tf-btn px-2.5 py-1 rounded-md text-textMuted hover:text-neutral-900">All Time</button>
+                            </div>
+                            <button onclick="exportAnalyticsCSV()" class="px-3.5 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors flex items-center gap-1.5">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                <span>Export CSV</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- KPI Cards Row -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-5">
+                        <div class="border border-borderLight rounded-xl p-5 bg-white">
+                            <p class="text-xs text-textMuted mb-1">Total Impressions / Views</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl font-semibold text-neutral-900">1,420,800</span>
+                                <span class="px-2 py-0.5 text-[11px] font-medium rounded-full bg-badgeGreenBg text-badgeGreenText">+22.4%</span>
+                            </div>
+                            <p class="text-[11px] text-textMuted mt-2">vs. 1.16M last 30 days</p>
+                        </div>
+                        <div class="border border-borderLight rounded-xl p-5 bg-white">
+                            <p class="text-xs text-textMuted mb-1">Avg. Engagement Rate</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl font-semibold text-neutral-900">6.42%</span>
+                                <span class="px-2 py-0.5 text-[11px] font-medium rounded-full bg-badgeGreenBg text-badgeGreenText">+0.8%</span>
+                            </div>
+                            <p class="text-[11px] text-textMuted mt-2">Benchmark: 4.2% industry avg</p>
+                        </div>
+                        <div class="border border-borderLight rounded-xl p-5 bg-white">
+                            <p class="text-xs text-textMuted mb-1">Total Multi-Platform Shares</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl font-semibold text-neutral-900">14,280</span>
+                                <span class="px-2 py-0.5 text-[11px] font-medium rounded-full bg-badgeGreenBg text-badgeGreenText">+34%</span>
+                            </div>
+                            <p class="text-[11px] text-textMuted mt-2">High virality coefficient</p>
+                        </div>
+                        <div class="border border-borderLight rounded-xl p-5 bg-white">
+                            <p class="text-xs text-textMuted mb-1">Avg. Watch Completion</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl font-semibold text-neutral-900">88.5%</span>
+                                <span class="px-2 py-0.5 text-[11px] font-medium rounded-full bg-badgeGreenBg text-badgeGreenText">+4.1%</span>
+                            </div>
+                            <p class="text-[11px] text-textMuted mt-2">For videos under 60s</p>
+                        </div>
+                    </div>
+
+                    <!-- Deep Dive: Platform Breakdown Table & Retention Curve -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-5">
+                        <div class="lg:col-span-7 border border-borderLight rounded-xl p-5 bg-white overflow-x-auto">
+                            <h3 class="text-sm font-semibold text-neutral-900 mb-4">Platform Performance Comparison</h3>
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="border-b border-borderLight text-textMuted">
+                                        <th class="pb-2.5 font-medium">Platform</th>
+                                        <th class="pb-2.5 font-medium">Posts</th>
+                                        <th class="pb-2.5 font-medium">Views</th>
+                                        <th class="pb-2.5 font-medium">Avg Likes</th>
+                                        <th class="pb-2.5 font-medium">Shares</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-borderLight text-neutral-800">
+                                    <tr>
+                                        <td class="py-3 font-semibold flex items-center gap-2">
+                                            <span class="w-2.5 h-2.5 rounded-full bg-[#0A0A0A]"></span> YouTube Shorts
+                                        </td>
+                                        <td class="py-3">18</td>
+                                        <td class="py-3 font-medium">594,200</td>
+                                        <td class="py-3">42,100</td>
+                                        <td class="py-3">6,180</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-3 font-semibold flex items-center gap-2">
+                                            <span class="w-2.5 h-2.5 rounded-full bg-[#4A4A4A]"></span> Instagram Reels
+                                        </td>
+                                        <td class="py-3">16</td>
+                                        <td class="py-3 font-medium">284,500</td>
+                                        <td class="py-3">28,400</td>
+                                        <td class="py-3">3,920</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-3 font-semibold flex items-center gap-2">
+                                            <span class="w-2.5 h-2.5 rounded-full bg-[#787878]"></span> TikTok Video
+                                        </td>
+                                        <td class="py-3">22</td>
+                                        <td class="py-3 font-medium">438,100</td>
+                                        <td class="py-3">39,200</td>
+                                        <td class="py-3">4,810</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-3 font-semibold flex items-center gap-2">
+                                            <span class="w-2.5 h-2.5 rounded-full bg-[#D6D6D6]"></span> Facebook Page
+                                        </td>
+                                        <td class="py-3">14</td>
+                                        <td class="py-3 font-medium">104,000</td>
+                                        <td class="py-3">8,400</td>
+                                        <td class="py-3">890</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Retention Curve SVG Card -->
+                        <div class="lg:col-span-5 border border-borderLight rounded-xl p-5 bg-white flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-sm font-semibold text-neutral-900 mb-1">Audience Retention Curve</h3>
+                                <p class="text-[11px] text-textMuted mb-4">First 5-second hook retention vs drop-off point</p>
+                            </div>
+                            <div class="h-[140px] w-full">
+                                <svg viewBox="0 0 300 140" class="w-full h-full overflow-visible">
+                                    <line x1="0" y1="20" x2="300" y2="20" stroke="#EAEAEA" stroke-width="1" stroke-dasharray="3,3" />
+                                    <line x1="0" y1="60" x2="300" y2="60" stroke="#EAEAEA" stroke-width="1" stroke-dasharray="3,3" />
+                                    <line x1="0" y1="100" x2="300" y2="100" stroke="#EAEAEA" stroke-width="1" stroke-dasharray="3,3" />
+                                    <path d="M0,25 C40,28 70,35 120,48 C180,62 230,70 300,75 L300,140 L0,140 Z" fill="#F5F5F5" />
+                                    <path d="M0,25 C40,28 70,35 120,48 C180,62 230,70 300,75" fill="none" stroke="#0A0A0A" stroke-width="2" />
+                                    <circle cx="120" cy="48" r="4" fill="#0A0A0A" />
+                                </svg>
+                            </div>
+                            <div class="flex justify-between text-[11px] font-medium text-neutral-700 mt-2">
+                                <span>0s (Hook: 96%)</span>
+                                <span>25s (Core: 78%)</span>
+                                <span>50s (CTA: 69%)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Performing Videos Leaderboard Table -->
+                    <div class="border border-borderLight rounded-xl p-5 bg-white">
+                        <h3 class="text-sm font-semibold text-neutral-900 mb-4">Top Content Leaderboard</h3>
+                        <div class="divide-y divide-borderLight" id="analytics-top-posts">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 6: IDEAS BANK & AI CREATIVE STUDIO (PRD 6.9)
+                ====================================================================== -->
+                <section id="page-ideas" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Ideas Bank & AI Creative Studio</h1>
+                            <p class="text-xs text-textMuted mt-0.5">Capture instant thoughts, scrape reference links, and generate viral hooks & outlines with AI.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="openNewIdeaModal()" class="px-3.5 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 transition-colors flex items-center gap-1.5">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                <span>Quick Idea</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- AI Creative Generator Box (PRD RES-2) -->
+                    <div class="border border-borderLight rounded-xl p-5 bg-sidebar mb-6">
+                        <div class="flex items-center gap-2 text-xs font-semibold text-neutral-900 mb-2">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-neutral-900"></i>
+                            AI Content Hook & Script Generator
+                        </div>
+                        <div class="flex flex-col sm:flex-row items-center gap-3">
+                            <input 
+                                id="ai-niche-input" 
+                                type="text" 
+                                placeholder="Enter a topic or niche (e.g. Next.js 15 Server Actions or AI Automation)..." 
+                                value="Next.js 15 Server Actions best practices for solo devs"
+                                class="flex-1 w-full px-3.5 py-2 text-xs border border-borderLight rounded-lg bg-white focus:outline-none focus:border-neutral-700"
+                            >
+                            <button onclick="generateAICreatives()" class="w-full sm:w-auto px-4 py-2 bg-neutral-900 text-white text-xs font-medium rounded-lg hover:bg-neutral-800 transition-colors shrink-0 flex items-center justify-center gap-2 shadow-xs">
+                                <i data-lucide="wand-2" class="w-3.5 h-3.5"></i>
+                                <span>Generate Concepts</span>
+                            </button>
+                        </div>
+
+                        <!-- Generated AI Output Area (collapsible / dynamic) -->
+                        <div id="ai-output-box" class="hidden mt-4 pt-4 border-t border-borderLight bg-white p-4 rounded-xl space-y-4">
+                            <!-- Populated by JS with Hooks, Outlines, and Captions -->
+                        </div>
+                    </div>
+
+                    <!-- Ideas Grid (PRD RES-1) -->
+                    <div class="mb-4 flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-neutral-900">Captured Content Ideas (<span id="ideas-count">4</span>)</h3>
+                        <span class="text-[11px] text-textMuted">Click "Move to Pipeline" to start production</span>
+                    </div>
+
+                    <div id="ideas-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                        <!-- Populated by renderIdeas() -->
+                    </div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 7: MEDIA ASSETS LIBRARY (PRD 6.4)
+                ====================================================================== -->
+                <section id="page-media" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Media Assets Library</h1>
+                            <p class="text-xs text-textMuted mt-0.5">High-definition raw footage, edited video exports, and thumbnail covers stored per workspace.</p>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            <input id="media-search" oninput="renderMediaLibrary()" type="text" placeholder="Search assets..." class="px-3 py-1.5 text-xs border border-borderLight rounded-lg focus:outline-none focus:border-neutral-500">
+                            <button onclick="document.getElementById('media-upload-hidden').click()" class="px-3.5 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 transition-colors flex items-center gap-1.5 shadow-2xs">
+                                <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                <span>Upload Asset</span>
+                            </button>
+                            <input type="file" id="media-upload-hidden" class="hidden" onchange="handleNewMediaUpload(event)">
+                        </div>
+                    </div>
+
+                    <!-- Media Grid -->
+                    <div id="media-assets-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                        <!-- Populated by renderMediaLibrary() -->
+                    </div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 8: SOCIAL ACCOUNTS & OAUTH CONSTRAINTS (PRD 6.3 & 8)
+                ====================================================================== -->
+                <section id="page-accounts" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Social Accounts & API Connections</h1>
+                            <p class="text-xs text-textMuted mt-0.5">Manage OAuth credentials, token expiration health, and daily YouTube API quotas.</p>
+                        </div>
+                        <button onclick="openConnectModal()" class="px-3.5 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 transition-colors flex items-center gap-1.5 shadow-2xs">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                            <span>Connect New Account</span>
+                        </button>
+                    </div>
+
+                    <!-- Accounts Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="accounts-list-container">
+                        <!-- Populated by renderAccounts() -->
+                    </div>
+
+                    <!-- API Compliance & Privacy Notice (PRD Section 8 & 11) -->
+                    <div class="mt-8 border border-borderLight rounded-xl p-5 bg-sidebar space-y-2">
+                        <div class="flex items-center gap-2 text-xs font-semibold text-neutral-900">
+                            <i data-lucide="shield-alert" class="w-4 h-4 text-neutral-800"></i>
+                            Platform API Guidelines & Quotas
+                        </div>
+                        <p class="text-xs text-textMuted leading-relaxed">
+                            All tokens are encrypted at-rest with AES-256-GCM. YouTube Data API v3 enforces a default quota of 10,000 units/day (~1,600 units per video insert). Instagram Graph API requires Business or Creator account permissions. TikTok Content Posting API requires Direct Post scope or Inbox fallback.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 9: SPONSORS & CRM RELASI (PRD 6.7.7)
+                ====================================================================== -->
+                <section id="page-contacts" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Sponsors & Brand Partnerships</h1>
+                            <p class="text-xs text-textMuted mt-0.5">Creator relationship CRM: deal pipeline, contract values, and linked sponsored posts.</p>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            <button onclick="openNewSponsorModal()" class="px-3.5 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 transition-colors flex items-center gap-1.5 shadow-2xs">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                <span>Add Brand Deal</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sponsors Directory Table -->
+                    <div class="border border-borderLight rounded-xl bg-white overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b border-borderLight bg-sidebar text-textMuted">
+                                    <th class="py-3 px-4 font-medium">Brand / Sponsor</th>
+                                    <th class="py-3 px-4 font-medium">Deal Type</th>
+                                    <th class="py-3 px-4 font-medium">Value</th>
+                                    <th class="py-3 px-4 font-medium">Status</th>
+                                    <th class="py-3 px-4 font-medium">Linked Content Item</th>
+                                    <th class="py-3 px-4 font-medium text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contacts-table-body" class="divide-y divide-borderLight"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 10: NOTIFICATIONS & AUDIT JOB LOGS (PRD 6.10)
+                ====================================================================== -->
+                <section id="page-notifications" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Notifications & Activity Logs</h1>
+                            <p class="text-xs text-textMuted mt-0.5">Publishing job reports, retry logs, and platform OAuth health notices.</p>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            <button onclick="markAllNotificationsRead()" class="px-3.5 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors flex items-center gap-1.5">
+                                <i data-lucide="check-check" class="w-3.5 h-3.5"></i>
+                                <span>Mark all as read</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filter Tabs -->
+                    <div class="flex items-center gap-2 border-b border-borderLight pb-3 mb-5 overflow-x-auto">
+                        <button onclick="filterNotifications('all', this)" class="notif-tab px-3.5 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 text-white">All Logs</button>
+                        <button onclick="filterNotifications('publish', this)" class="notif-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-textMuted hover:bg-neutral-100">Publish Jobs</button>
+                        <button onclick="filterNotifications('token', this)" class="notif-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-textMuted hover:bg-neutral-100">Tokens & Quotas</button>
+                        <button onclick="filterNotifications('unread', this)" class="notif-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-textMuted hover:bg-neutral-100">Unread</button>
+                    </div>
+
+                    <!-- Feed Container -->
+                    <div id="notifications-list" class="space-y-3"></div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 11: SETTINGS & WORKSPACE PREFERENCES (PRD 6.1 & 6.2)
+                ====================================================================== -->
+                <section id="page-settings" class="page-view hidden">
+                    <div class="mb-6">
+                        <h1 class="text-[22px] font-semibold text-neutral-900">Settings & Content Rules</h1>
+                        <p class="text-xs text-textMuted mt-0.5">Configure creator profile, timezone, content pillars, and caption templates.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        <!-- Subnav (3 Cols) -->
+                        <div class="lg:col-span-3 border border-borderLight rounded-xl p-2 bg-sidebar space-y-1">
+                            <button onclick="switchSettingsTab('profile', this)" class="settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-white shadow-xs text-neutral-900">Creator Profile</button>
+                            <button onclick="switchSettingsTab('workspace', this)" class="settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-textMuted hover:text-neutral-900">Workspace & Timezone</button>
+                            <button onclick="switchSettingsTab('pillars', this)" class="settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-textMuted hover:text-neutral-900">Content Pillars</button>
+                            <button onclick="switchSettingsTab('templates', this)" class="settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-textMuted hover:text-neutral-900">Caption Templates</button>
+                        </div>
+
+                        <!-- Panel (9 Cols) -->
+                        <div class="lg:col-span-9 border border-borderLight rounded-xl p-6 bg-white">
+                            <!-- Tab: Profile -->
+                            <div id="settings-panel-profile" class="settings-panel space-y-5">
+                                <h3 class="text-sm font-semibold text-neutral-900 border-b border-borderLight pb-3">Creator Information</h3>
+                                <div class="flex items-center gap-4">
+                                    <div class="w-14 h-14 rounded-full bg-neutral-900 text-white flex items-center justify-center text-lg font-bold">AS</div>
+                                    <div>
+                                        <p class="text-xs font-semibold text-neutral-900">Aji Subekti</p>
+                                        <p class="text-[11px] text-textMuted">Solo Creator • Tech Pulse Studio Owner</p>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-neutral-700 mb-1">Display Name</label>
+                                        <input id="setting-name-input" type="text" value="Aji S." class="w-full px-3 py-2 text-xs border border-borderLight rounded-lg focus:outline-none focus:border-neutral-600">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-neutral-700 mb-1">Email Address</label>
+                                        <input type="email" value="aji@techpulse.id" class="w-full px-3 py-2 text-xs border border-borderLight rounded-lg focus:outline-none focus:border-neutral-600">
+                                    </div>
+                                </div>
+                                <div class="pt-2">
+                                    <button onclick="saveProfileSettings()" class="px-4 py-2 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800">Save Changes</button>
+                                </div>
+                            </div>
+
+                            <!-- Tab: Workspace & Timezone -->
+                            <div id="settings-panel-workspace" class="settings-panel hidden space-y-5">
+                                <h3 class="text-sm font-semibold text-neutral-900 border-b border-borderLight pb-3">Workspace & Local Timezone</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-neutral-700 mb-1">Workspace Name</label>
+                                        <input id="setting-workspace-input" type="text" value="Tech Creator Brand" class="w-full px-3 py-2 text-xs border border-borderLight rounded-lg">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-neutral-700 mb-1">Default Publishing Timezone</label>
+                                        <select class="w-full px-3 py-2 text-xs border border-borderLight rounded-lg">
+                                            <option selected>Asia/Jakarta (WIB / UTC+7)</option>
+                                            <option>Asia/Makassar (WITA / UTC+8)</option>
+                                            <option>Asia/Jayapura (WIT / UTC+9)</option>
+                                            <option>America/New_York (EST)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button onclick="saveWorkspaceSettings()" class="px-4 py-2 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800">Update Workspace</button>
+                            </div>
+
+                            <!-- Tab: Content Pillars -->
+                            <div id="settings-panel-pillars" class="settings-panel hidden space-y-4">
+                                <div class="flex items-center justify-between border-b border-borderLight pb-3">
+                                    <h3 class="text-sm font-semibold text-neutral-900">Active Content Pillars</h3>
+                                    <button onclick="openNewPillarModal()" class="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium">+ Add Pillar</button>
+                                </div>
+                                <div class="space-y-2.5 text-xs" id="pillars-list">
+                                    <div class="p-3 border border-borderLight rounded-lg flex items-center justify-between">
+                                        <div><p class="font-semibold text-neutral-900">Tech Reviews</p><p class="text-[11px] text-textMuted">Developer tools, IDEs, laptops, and hardware</p></div>
+                                        <span class="px-2.5 py-0.5 rounded bg-neutral-100 font-medium text-[11px]">Primary</span>
+                                    </div>
+                                    <div class="p-3 border border-borderLight rounded-lg flex items-center justify-between">
+                                        <div><p class="font-semibold text-neutral-900">Productivity Hacks</p><p class="text-[11px] text-textMuted">Time management, automation, AI agent workflows</p></div>
+                                        <span class="px-2.5 py-0.5 rounded bg-neutral-100 font-medium text-[11px]">Active</span>
+                                    </div>
+                                    <div class="p-3 border border-borderLight rounded-lg flex items-center justify-between">
+                                        <div><p class="font-semibold text-neutral-900">Tutorials & Code</p><p class="text-[11px] text-textMuted">Step-by-step React, Next.js, and Supabase guides</p></div>
+                                        <span class="px-2.5 py-0.5 rounded bg-neutral-100 font-medium text-[11px]">Active</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab: Caption Templates -->
+                            <div id="settings-panel-templates" class="settings-panel hidden space-y-4">
+                                <div class="flex items-center justify-between border-b border-borderLight pb-3">
+                                    <h3 class="text-sm font-semibold text-neutral-900">Caption & Outro Templates</h3>
+                                    <button onclick="showToast('Template created')" class="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium">+ New Template</button>
+                                </div>
+                                <div class="p-3 border border-borderLight rounded-lg text-xs space-y-1.5">
+                                    <p class="font-semibold text-neutral-900">Standard Call to Action</p>
+                                    <p class="text-textMuted leading-relaxed bg-sidebar p-2.5 rounded border border-borderLight font-mono text-[11px]">
+                                        Save this video for reference later! Check link in bio for source code and free guide. #tech #coding
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Notification Toast for Feedback -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 bg-neutral-900 text-white text-xs font-medium px-4 py-2.5 rounded-lg shadow-xl transform translate-y-16 opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-2">
+        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+        <span id="toast-message">Action completed successfully</span>
+    </div>
+
+    <!-- ==================== JAVASCRIPT LOGIC & REACTIVE STATE ==================== -->
+    <script>
+        // =========================================================================
+        // 1. DASHBOARD DATA & CHARTS INITIALIZATION
+        // =========================================================================
+
+        // Stacked Bar Data (Posts distributed per day across 4 platforms)
+        const stackedBarData = [
+            { day: 'Sun, 19', segments: [{ h: 25, c: '#D6D6D6', name: 'Facebook' }, { h: 25, c: '#787878', name: 'TikTok' }, { h: 25, c: '#4A4A4A', name: 'Instagram' }, { h: 25, c: '#0A0A0A', name: 'YouTube' }] },
+            { day: 'Mon, 20', segments: [{ h: 15, c: '#D6D6D6', name: 'Facebook' }, { h: 35, c: '#787878', name: 'TikTok' }, { h: 25, c: '#4A4A4A', name: 'Instagram' }, { h: 25, c: '#0A0A0A', name: 'YouTube' }] },
+            { day: 'Tue, 21', segments: [{ h: 20, c: '#D6D6D6', name: 'Facebook' }, { h: 30, c: '#787878', name: 'TikTok' }, { h: 30, c: '#4A4A4A', name: 'Instagram' }, { h: 20, c: '#0A0A0A', name: 'YouTube' }] },
+            { day: 'Wed, 22', segments: [{ h: 25, c: '#D6D6D6', name: 'Facebook' }, { h: 25, c: '#787878', name: 'TikTok' }, { h: 25, c: '#4A4A4A', name: 'Instagram' }, { h: 25, c: '#0A0A0A', name: 'YouTube' }] },
+            { day: 'Thu, 23', segments: [{ h: 10, c: '#D6D6D6', name: 'Facebook' }, { h: 40, c: '#787878', name: 'TikTok' }, { h: 20, c: '#4A4A4A', name: 'Instagram' }, { h: 30, c: '#0A0A0A', name: 'YouTube' }] },
+            { day: 'Fri, 24', segments: [{ h: 15, c: '#D6D6D6', name: 'Facebook' }, { h: 25, c: '#787878', name: 'TikTok' }, { h: 35, c: '#4A4A4A', name: 'Instagram' }, { h: 25, c: '#0A0A0A', name: 'YouTube' }] },
+            { day: 'Sat, 25', segments: [{ h: 20, c: '#D6D6D6', name: 'Facebook' }, { h: 20, c: '#787878', name: 'TikTok' }, { h: 30, c: '#4A4A4A', name: 'Instagram' }, { h: 30, c: '#0A0A0A', name: 'YouTube' }] }
+        ];
+
+        const barsContainer = document.getElementById('stacked-bars-container');
+        stackedBarData.forEach(item => {
+            const col = document.createElement('div');
+            col.className = 'bar-group w-[22px] sm:w-[25px] h-full flex flex-col justify-between gap-[1.5px] cursor-pointer';
+            item.segments.forEach(seg => {
+                const segEl = document.createElement('div');
+                segEl.className = 'bar-segment w-full';
+                segEl.style.height = `${seg.h}%`;
+                segEl.style.backgroundColor = seg.c;
+                segEl.onmousemove = (e) => showTooltip(e, `${item.day} • ${seg.name}: ${Math.round(seg.h / 15)} posts`);
+                segEl.onmouseleave = hideTooltip;
+                col.appendChild(segEl);
+            });
+            barsContainer.appendChild(col);
+        });
+
+        // 28-Day Consistency Matrix Heatmap
+        const heatmapPattern = [
+            [0, 1, 2, 3, 2, 3, 3],
+            [1, 2, 3, 3, 1, 3, 2],
+            [2, 3, 3, 2, 3, 3, 3],
+            [3, 3, 2, 3, 2, 3, 1]
+        ];
+        const shadeMap = ['#D4D4D4', '#8C8C8C', '#474747', '#0A0A0A'];
+        const daysLabel = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const heatmapGrid = document.getElementById('heatmap-grid');
+
+        heatmapPattern.forEach((row, rIdx) => {
+            row.forEach((val, cIdx) => {
+                const cell = document.createElement('div');
+                cell.className = 'heatmap-cell w-4 h-4 rounded-[2px] cursor-pointer';
+                cell.style.backgroundColor = shadeMap[val];
+                const count = val === 0 ? '0 posts' : val === 1 ? '1 post' : val === 2 ? '2 posts' : '4 posts (All 4 Platforms)';
+                cell.onmousemove = (e) => showTooltip(e, `Week ${rIdx + 1}, ${daysLabel[cIdx]}: ${count}`);
+                cell.onmouseleave = hideTooltip;
+                heatmapGrid.appendChild(cell);
+            });
+        });
+
+        // Mini bars for top video impressions
+        const videoBarSpecs = [
+            { h: 88, c: '#0A0A0A' }, { h: 50, c: '#737373' }, { h: 95, c: '#0A0A0A' },
+            { h: 70, c: '#737373' }, { h: 82, c: '#0A0A0A' }, { h: 60, c: '#737373' },
+            { h: 90, c: '#0A0A0A' }, { h: 55, c: '#737373' }, { h: 100, c: '#0A0A0A' },
+            { h: 72, c: '#737373' }, { h: 95, c: '#0A0A0A' }, { h: 65, c: '#737373' }
+        ];
+        const companyBarsContainer = document.getElementById('company-bars');
+        videoBarSpecs.forEach((bar, i) => {
+            const b = document.createElement('div');
+            b.className = 'mini-bar flex-1 rounded-[4px] cursor-pointer hover:opacity-75';
+            b.style.height = `${bar.h}%`;
+            b.style.backgroundColor = bar.c;
+            b.onmousemove = (e) => showTooltip(e, `Day ${i + 1} Viral Velocity: ${bar.h * 240} views`);
+            b.onmouseleave = hideTooltip;
+            companyBarsContainer.appendChild(b);
+        });
+
+        // =========================================================================
+        // 2. SPA ROUTER & NAVIGATION CONTROLLER
+        // =========================================================================
+        function switchPage(pageId, navEl) {
+            document.querySelectorAll('.page-view').forEach(sec => sec.classList.add('hidden'));
+            const target = document.getElementById(`page-${pageId}`);
+            if (target) target.classList.remove('hidden');
+
+            if (navEl) {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('bg-[#EFEFEF]', 'text-neutral-900');
+                    item.classList.add('text-textMuted');
+                });
+                navEl.classList.add('bg-[#EFEFEF]', 'text-neutral-900');
+                navEl.classList.remove('text-textMuted');
+            }
+
+            // Close mobile drawer if open
+            const sb = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (!sb.classList.contains('-translate-x-full') && window.innerWidth < 1024) {
+                sb.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            lucide.createIcons();
+        }
+
+        // =========================================================================
+        // 3. 1-CLICK MULTI-PLATFORM PUBLISHER (PRD Section 6.5 & Live Parallel Job)
+        // =========================================================================
+        const publishTargets = [
+            { id: 'yt', name: 'YouTube Shorts', account: 'Tech Pulse Studio', icon: 'play-square', status: 'queued', progress: 0, url: 'https://youtube.com/shorts/sample1' },
+            { id: 'ig', name: 'Instagram Reels', account: '@techpulse.id', icon: 'instagram', status: 'queued', progress: 0, url: 'https://instagram.com/reel/sample2' },
+            { id: 'tt', name: 'TikTok Video', account: '@techpulse_official', icon: 'music-2', status: 'queued', progress: 0, url: 'https://tiktok.com/@sample3' },
+            { id: 'fb', name: 'Facebook Page', account: 'Tech Pulse ID', icon: 'facebook', status: 'queued', progress: 0, url: 'https://facebook.com/reel/sample4' }
+        ];
+
+        let publishInterval = null;
+
+        function triggerPublishNow() {
+            const title = document.getElementById('composer-title').value.trim() || 'Untitled Social Content';
+            document.getElementById('publish-job-title').textContent = `Publishing "${title}"`;
+            document.getElementById('publish-idempotency-key').textContent = `sph-job-${Math.floor(1000 + Math.random() * 9000)}-${Date.now().toString(36)}`;
+
+            // Reset targets
+            publishTargets.forEach(t => {
+                t.status = 'uploading';
+                t.progress = 15;
+            });
+
+            renderPublishJobModal();
+            document.getElementById('publish-progress-modal').classList.remove('hidden');
+            document.getElementById('publish-progress-modal').classList.add('flex');
+
+            let step = 0;
+            clearInterval(publishInterval);
+            publishInterval = setInterval(() => {
+                step++;
+                if (step === 1) {
+                    publishTargets[0].progress = 45; // YT
+                    publishTargets[1].progress = 50; // IG
+                    publishTargets[2].progress = 40; // TT
+                    publishTargets[3].progress = 60; // FB
+                    document.getElementById('job-overall-status').textContent = 'Uploading media chunks via resumable storage adapters...';
+                    document.getElementById('job-overall-percent').textContent = '50%';
+                    document.getElementById('job-progress-bar-fill').style.width = '50%';
+                } else if (step === 2) {
+                    publishTargets[0].status = 'processing';
+                    publishTargets[0].progress = 85;
+                    publishTargets[1].status = 'processing';
+                    publishTargets[1].progress = 90;
+                    publishTargets[2].status = 'processing';
+                    publishTargets[2].progress = 80;
+                    publishTargets[3].status = 'published';
+                    publishTargets[3].progress = 100;
+                    document.getElementById('job-overall-status').textContent = 'Platform container transcode & API ingestion in progress...';
+                    document.getElementById('job-overall-percent').textContent = '80%';
+                    document.getElementById('job-progress-bar-fill').style.width = '80%';
+                } else if (step === 3) {
+                    publishTargets[0].status = 'published';
+                    publishTargets[0].progress = 100;
+                    publishTargets[1].status = 'published';
+                    publishTargets[1].progress = 100;
+                    publishTargets[2].status = 'published';
+                    publishTargets[2].progress = 100;
+                    document.getElementById('job-overall-status').textContent = 'Success! Content published to all 4 platforms in 2.8 seconds.';
+                    document.getElementById('job-overall-percent').textContent = '100%';
+                    document.getElementById('job-progress-bar-fill').style.width = '100%';
+                    clearInterval(publishInterval);
+                    showToast('1-Click Multi-Platform Publish Succeeded!');
+                }
+                renderPublishJobModal();
+            }, 800);
+        }
+
+        function renderPublishJobModal() {
+            const container = document.getElementById('publish-targets-list');
+            container.innerHTML = publishTargets.map(t => {
+                let badge = '';
+                if (t.status === 'queued') badge = '<span class="text-textMuted text-[11px]">Queued</span>';
+                else if (t.status === 'uploading') badge = '<span class="text-neutral-700 text-[11px] font-medium">Uploading media...</span>';
+                else if (t.status === 'processing') badge = '<span class="text-badgeAmberText bg-badgeAmberBg px-2 py-0.5 rounded text-[10px] font-medium">Processing...</span>';
+                else if (t.status === 'published') badge = `<a href="${t.url}" target="_blank" class="text-badgeGreenText bg-badgeGreenBg px-2 py-0.5 rounded text-[10px] font-semibold hover:underline flex items-center gap-1">Published <i data-lucide="external-link" class="w-2.5 h-2.5"></i></a>`;
+                else if (t.status === 'failed') badge = `<button onclick="retryTarget('${t.id}')" class="text-badgeRedText bg-badgeRedBg px-2 py-0.5 rounded text-[10px] font-semibold hover:underline">Retry</button>`;
+
+                return `
+                    <div class="border border-borderLight rounded-xl p-3.5 bg-sidebar flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-neutral-900 text-white flex items-center justify-center font-bold text-xs">
+                                ${t.id.toUpperCase()}
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold text-neutral-900">${t.name}</p>
+                                <p class="text-[11px] text-textMuted">${t.account}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-24 bg-neutral-200 h-1.5 rounded-full overflow-hidden hidden sm:block">
+                                <div class="bg-neutral-900 h-full transition-all duration-300" style="width: ${t.progress}%"></div>
+                            </div>
+                            ${badge}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function retryTarget(targetId) {
+            const target = publishTargets.find(t => t.id === targetId);
+            if (target) {
+                target.status = 'uploading';
+                target.progress = 30;
+                renderPublishJobModal();
+                setTimeout(() => {
+                    target.status = 'published';
+                    target.progress = 100;
+                    renderPublishJobModal();
+                    showToast(`Successfully retried publish to ${target.name}`);
+                }, 1000);
+            }
+        }
+
+        function closePublishModal() {
+            document.getElementById('publish-progress-modal').classList.add('hidden');
+            document.getElementById('publish-progress-modal').classList.remove('flex');
+            clearInterval(publishInterval);
+        }
+
+        function switchOverrideTab(platformKey, btn) {
+            document.querySelectorAll('.override-tab').forEach(b => {
+                b.className = 'override-tab px-2.5 py-1 rounded text-xs font-medium text-textMuted hover:bg-neutral-100';
+            });
+            btn.className = 'override-tab px-2.5 py-1 rounded text-xs font-medium bg-neutral-900 text-white';
+
+            document.querySelectorAll('.override-panel').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`override-${platformKey}`).classList.remove('hidden');
+        }
+
+        function handleVideoUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            document.getElementById('upload-status-heading').textContent = `Uploaded: ${file.name}`;
+            document.getElementById('upload-status-sub').textContent = `${(file.size / (1024*1024)).toFixed(1)} MB • Resumable TUS Checksum Verified`;
+            document.getElementById('upload-progress-container').classList.remove('hidden');
+            document.getElementById('upload-filename').textContent = `${file.name} (${(file.size / (1024*1024)).toFixed(1)} MB)`;
+            showToast('Video uploaded & validated for Shorts/Reels/TikTok');
+        }
+
+        function updateCharCount(inputId, labelId, max) {
+            const val = document.getElementById(inputId).value;
+            document.getElementById(labelId).textContent = `${val.length} / ${max}`;
+        }
+
+        function addHashtag(tags) {
+            const cap = document.getElementById('composer-caption');
+            cap.value = cap.value.trim() + '\n\n' + tags;
+            updateCharCount('composer-caption', 'caption-char-count', 2200);
+            showToast('Added hashtags to caption');
+        }
+
+        function insertTemplateText() {
+            const cap = document.getElementById('composer-caption');
+            cap.value += '\n\n---\nDrop a 🔥 below if you found this insightful! Follow @techpulse.id for daily engineering tips.';
+            updateCharCount('composer-caption', 'caption-char-count', 2200);
+            showToast('Inserted template CTA');
+        }
+
+        function saveComposerDraft() {
+            const title = document.getElementById('composer-title').value.trim() || 'Untitled Post';
+            pipelineItems.unshift({
+                id: Date.now(),
+                title,
+                pillar: 'Tutorials',
+                stage: 'Siap Posting',
+                priority: 'High',
+                due: 'Oct 28',
+                checklist: '4/4',
+                platforms: ['yt', 'ig', 'tt', 'fb']
+            });
+            renderPipeline();
+            showToast('Saved content card to "Siap Posting" in Pipeline');
+            switchPage('pipeline', document.querySelector('[data-page=pipeline]'));
+        }
+
+        // =========================================================================
+        // 4. CONTENT PIPELINE CRM (PRD Section 6.7: 8 STAGES)
+        // =========================================================================
+        const pipelineStages = [
+            'Ide', 'Naskah', 'Produksi', 'Editing', 'Siap Posting', 'Terjadwal', 'Terbit', 'Dianalisis'
+        ];
+
+        let pipelineItems = [
+            { id: 1, title: '5 AI Tools That Save 20 Hours/Week', pillar: 'Productivity', stage: 'Terbit', priority: 'High', due: 'Oct 22', checklist: '4/4', platforms: ['yt', 'ig', 'tt', 'fb'] },
+            { id: 2, title: 'Next.js 15 Server Actions Deep Dive', pillar: 'Tutorials', stage: 'Terjadwal', priority: 'High', due: 'Oct 25', checklist: '4/4', platforms: ['yt', 'ig', 'tt', 'fb'] },
+            { id: 3, title: 'Supabase vs Firebase in 2026', pillar: 'Tech Reviews', stage: 'Siap Posting', priority: 'Medium', due: 'Oct 27', checklist: '3/3', platforms: ['yt', 'ig'] },
+            { id: 4, title: 'Mechanical Keyboard Setup for Devs', pillar: 'Sponsorship', stage: 'Editing', priority: 'High', due: 'Oct 29', checklist: '2/4', platforms: ['yt', 'ig', 'tt'] },
+            { id: 5, title: 'Micro-SaaS Architecture in 60s', pillar: 'Tutorials', stage: 'Produksi', priority: 'Medium', due: 'Nov 01', checklist: '1/3', platforms: ['ig', 'tt'] },
+            { id: 6, title: 'Why I Stopped Using Redux', pillar: 'Tech Reviews', stage: 'Naskah', priority: 'Low', due: 'Nov 03', checklist: '2/2', platforms: ['yt', 'fb'] },
+            { id: 7, title: 'Prompt Engineering Secrets for Code', pillar: 'Productivity', stage: 'Ide', priority: 'Medium', due: 'Nov 06', checklist: '0/2', platforms: ['yt', 'ig', 'tt', 'fb'] },
+            { id: 8, title: 'Day in Life of Remote Solo Founder', pillar: 'Productivity', stage: 'Dianalisis', priority: 'Low', due: 'Oct 15', checklist: '4/4', platforms: ['yt', 'ig', 'tt', 'fb'] }
+        ];
+
+        let currentPipelineView = 'board';
+
+        function renderPipeline() {
+            const pillarFilter = document.getElementById('pipeline-pillar-filter').value;
+            const filtered = pipelineItems.filter(p => pillarFilter === 'All' || p.pillar === pillarFilter);
+
+            document.getElementById('sidebar-pipeline-badge').textContent = pipelineItems.length;
+
+            // Render Kanban Board
+            const kanbanContainer = document.getElementById('pipeline-kanban-board');
+            kanbanContainer.innerHTML = pipelineStages.map(stage => {
+                const stageItems = filtered.filter(item => item.stage === stage);
+                return `
+                    <div class="w-[200px] shrink-0 border border-borderLight rounded-xl p-3 bg-sidebar flex flex-col justify-between min-h-[460px]">
+                        <div>
+                            <div class="flex items-center justify-between mb-3 pb-2 border-b border-borderLight">
+                                <span class="text-xs font-semibold text-neutral-900">${stage}</span>
+                                <span class="px-2 py-0.5 text-[10px] rounded-full bg-white border border-borderLight font-semibold text-neutral-800">${stageItems.length}</span>
+                            </div>
+                            <div class="space-y-3">
+                                ${stageItems.map(item => `
+                                    <div class="kanban-card border border-borderLight rounded-lg p-3 bg-white shadow-2xs hover:border-neutral-400 transition-all cursor-pointer">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-neutral-100 text-neutral-800">${item.pillar}</span>
+                                            <span class="text-[10px] font-medium ${item.priority === 'High' ? 'text-badgeRedText' : 'text-textMuted'}">${item.priority}</span>
+                                        </div>
+                                        <h4 class="text-xs font-semibold text-neutral-900 leading-snug mb-2">${item.title}</h4>
+                                        <div class="flex items-center gap-1 mb-2.5">
+                                            ${item.platforms.map(pf => `<span class="px-1 py-0.5 text-[9px] font-bold rounded bg-neutral-100 text-neutral-700 uppercase">${pf}</span>`).join('')}
+                                        </div>
+                                        <div class="flex items-center justify-between text-[10px] text-textMuted pt-2 border-t border-borderLight">
+                                            <span>Due ${item.due}</span>
+                                            <button onclick="advancePipelineItem(${item.id})" class="text-neutral-900 font-semibold hover:underline">Next →</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <button onclick="openNewPipelineCardModal('${stage}')" class="w-full mt-3 py-1.5 rounded-lg border border-dashed border-neutral-300 text-[11px] font-medium text-textMuted hover:border-neutral-600 hover:text-neutral-900 transition-colors">
+                            + Add to ${stage}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            // Render Table List View
+            const listContainer = document.getElementById('pipeline-list-container');
+            listContainer.innerHTML = `
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="border-b border-borderLight bg-sidebar text-textMuted">
+                            <th class="py-3 px-4">Title</th>
+                            <th class="py-3 px-4">Content Pillar</th>
+                            <th class="py-3 px-4">Current Stage</th>
+                            <th class="py-3 px-4">Priority</th>
+                            <th class="py-3 px-4">Due Date</th>
+                            <th class="py-3 px-4">Platforms</th>
+                            <th class="py-3 px-4 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-borderLight">
+                        ${filtered.map(item => `
+                            <tr class="hover:bg-neutral-50">
+                                <td class="py-3 px-4 font-semibold text-neutral-900">${item.title}</td>
+                                <td class="py-3 px-4">${item.pillar}</td>
+                                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-800 font-medium">${item.stage}</span></td>
+                                <td class="py-3 px-4">${item.priority}</td>
+                                <td class="py-3 px-4 text-textMuted">${item.due}</td>
+                                <td class="py-3 px-4">${item.platforms.map(p => p.toUpperCase()).join(', ')}</td>
+                                <td class="py-3 px-4 text-right">
+                                    <button onclick="advancePipelineItem(${item.id})" class="px-2.5 py-1 rounded border border-borderLight text-xs hover:bg-neutral-900 hover:text-white transition-colors">Advance</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            lucide.createIcons();
+        }
+
+        function togglePipelineView(view) {
+            currentPipelineView = view;
+            document.getElementById('pipeline-board-container').classList.toggle('hidden', view !== 'board');
+            document.getElementById('pipeline-list-container').classList.toggle('hidden', view !== 'list');
+            document.getElementById('btn-pipeline-board').className = view === 'board' ? 'px-3 py-1 rounded-md text-xs font-medium bg-white shadow-xs text-neutral-900' : 'px-3 py-1 rounded-md text-xs font-medium text-textMuted hover:text-neutral-900';
+            document.getElementById('btn-pipeline-list').className = view === 'list' ? 'px-3 py-1 rounded-md text-xs font-medium bg-white shadow-xs text-neutral-900' : 'px-3 py-1 rounded-md text-xs font-medium text-textMuted hover:text-neutral-900';
+        }
+
+        function advancePipelineItem(id) {
+            const item = pipelineItems.find(p => p.id === id);
+            if (item) {
+                const currentIdx = pipelineStages.indexOf(item.stage);
+                const nextIdx = (currentIdx + 1) % pipelineStages.length;
+                item.stage = pipelineStages[nextIdx];
+                renderPipeline();
+                showToast(`Moved "${item.title}" to ${item.stage}`);
+            }
+        }
+
+        function openNewPipelineCardModal(defaultStage = 'Ide') {
+            openModal('Add New Content Item to Pipeline', `
+                <div>
+                    <label class="block font-medium mb-1">Content Title / Working Concept</label>
+                    <input id="modal-card-title" type="text" placeholder="e.g., 3 AI Terminal Tools You Need" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium mb-1">Content Pillar</label>
+                        <select id="modal-card-pillar" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                            <option value="Tech Reviews">Tech Reviews</option>
+                            <option value="Productivity">Productivity</option>
+                            <option value="Tutorials">Tutorials</option>
+                            <option value="Sponsorship">Sponsorship</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Initial Stage</label>
+                        <select id="modal-card-stage" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                            ${pipelineStages.map(s => `<option value="${s}" ${s === defaultStage ? 'selected' : ''}>${s}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium mb-1">Priority</label>
+                        <select id="modal-card-priority" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Target Due Date</label>
+                        <input id="modal-card-due" type="text" value="Nov 10" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Script Notes / Hook Outline</label>
+                    <textarea id="modal-card-notes" rows="3" placeholder="Key talking points..." class="w-full px-3 py-2 border border-borderLight rounded-lg"></textarea>
+                </div>
+                <button onclick="saveNewPipelineCard()" class="w-full py-2.5 rounded-lg bg-neutral-900 text-white font-medium hover:bg-neutral-800 transition-colors">Create Content Card</button>
+            `);
+        }
+
+        function saveNewPipelineCard() {
+            const title = document.getElementById('modal-card-title').value.trim();
+            if (!title) return showToast('Title is required');
+            const pillar = document.getElementById('modal-card-pillar').value;
+            const stage = document.getElementById('modal-card-stage').value;
+            const priority = document.getElementById('modal-card-priority').value;
+            const due = document.getElementById('modal-card-due').value || 'Nov 12';
+
+            pipelineItems.unshift({
+                id: Date.now(),
+                title,
+                pillar,
+                stage,
+                priority,
+                due,
+                checklist: '0/3',
+                platforms: ['yt', 'ig', 'tt', 'fb']
+            });
+            renderPipeline();
+            closeModal();
+            showToast(`Card added to "${stage}"`);
+        }
+
+        // =========================================================================
+        // 5. CALENDAR & SCHEDULING (PRD Section 6.6)
+        // =========================================================================
+        let calendarPosts = [
+            { day: 20, time: '19:00 WIB', title: '5 AI Tools Video', platforms: ['yt', 'ig', 'tt'] },
+            { day: 22, time: '18:30 WIB', title: 'Cursor AI Review', platforms: ['yt', 'ig'] },
+            { day: 25, time: '19:00 WIB', title: 'Next.js 15 Tutorial Hook', platforms: ['yt', 'ig', 'tt', 'fb'] },
+            { day: 28, time: '20:00 WIB', title: 'Supabase vs Firebase', platforms: ['yt', 'tt'] },
+            { day: 31, time: '19:00 WIB', title: 'Mechanical Keyboard Setup', platforms: ['ig', 'fb'] }
+        ];
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-days-grid');
+            let cellsHTML = '';
+            for (let d = 1; d <= 31; d++) {
+                const dayPosts = calendarPosts.filter(p => p.day === d);
+                cellsHTML += `
+                    <div class="min-h-[96px] p-2 bg-white hover:bg-neutral-50 transition-colors cursor-pointer" onclick="openDayScheduleModal(${d})">
+                        <div class="text-xs font-medium flex items-center justify-between">
+                            <span class="${d === 25 ? 'w-6 h-6 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold' : 'text-neutral-700'}">${d}</span>
+                            ${d === 25 ? '<span class="text-[9px] font-bold text-emerald-600">TODAY</span>' : ''}
+                        </div>
+                        <div class="mt-1.5 space-y-1">
+                            ${dayPosts.map(p => `
+                                <div class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-neutral-900 text-white truncate" title="${p.title} (${p.time})">
+                                    ${p.time.split(' ')[0]} • ${p.title}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            // Fill remaining 4 cells to make standard 35 grid
+            for (let i = 1; i <= 4; i++) {
+                cellsHTML += `<div class="min-h-[96px] p-2 bg-sidebar text-neutral-400 text-xs">${i} Nov</div>`;
+            }
+            grid.innerHTML = cellsHTML;
+
+            // Render Upcoming Posts Sidebar
+            const upcomingEl = document.getElementById('upcoming-events-list');
+            upcomingEl.innerHTML = calendarPosts.map(p => `
+                <div class="flex items-start justify-between border-b border-borderLight pb-2.5 last:border-none">
+                    <div>
+                        <p class="text-xs font-semibold text-neutral-900 leading-snug">${p.title}</p>
+                        <p class="text-[11px] text-textMuted mt-0.5">${p.platforms.map(x => x.toUpperCase()).join(' • ')}</p>
+                    </div>
+                    <span class="px-2 py-1 rounded bg-neutral-100 text-[10px] font-medium text-neutral-800 shrink-0">Oct ${p.day} • ${p.time}</span>
+                </div>
+            `).join('');
+        }
+
+        function openScheduleModal() {
+            openModal('Schedule Content for Multi-Platform Publishing', `
+                <div>
+                    <label class="block font-medium mb-1">Post Title</label>
+                    <input id="modal-sched-title" type="text" value="5 AI Tools That Save 20 Hours/Week" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium mb-1">Day in October</label>
+                        <input id="modal-sched-day" type="number" min="1" max="31" value="28" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Publish Time (WIB)</label>
+                        <select id="modal-sched-time" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                            <option value="19:00 WIB" selected>19:00 WIB (Optimal Peak)</option>
+                            <option value="12:00 WIB">12:00 WIB (Lunch Break)</option>
+                            <option value="20:30 WIB">20:30 WIB (Evening Primetime)</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="saveNewSchedule()" class="w-full py-2 rounded-lg bg-neutral-900 text-white font-medium hover:bg-neutral-800">Confirm Schedule</button>
+            `);
+        }
+
+        function saveNewSchedule() {
+            const title = document.getElementById('modal-sched-title').value.trim();
+            const day = parseInt(document.getElementById('modal-sched-day').value, 10) || 28;
+            const time = document.getElementById('modal-sched-time').value;
+            if (!title) return showToast('Title is required');
+            calendarPosts.push({ day, time, title, platforms: ['yt', 'ig', 'tt', 'fb'] });
+            renderCalendar();
+            closeModal();
+            showToast(`Scheduled for Oct ${day} at ${time}`);
+        }
+
+        function openDayScheduleModal(day) {
+            const posts = calendarPosts.filter(p => p.day === day);
+            openModal(`Scheduled Posts for Oct ${day}, 2026`, `
+                <div class="space-y-3">
+                    ${posts.length ? posts.map(p => `
+                        <div class="p-3 border border-borderLight rounded-lg bg-sidebar flex items-center justify-between">
+                            <div>
+                                <p class="font-semibold text-neutral-900">${p.title}</p>
+                                <p class="text-textMuted text-[11px]">${p.time} • Platforms: ${p.platforms.map(x => x.toUpperCase()).join(', ')}</p>
+                            </div>
+                            <button onclick="triggerPublishNow(); closeModal();" class="px-2.5 py-1 bg-neutral-900 text-white rounded text-xs font-medium">Publish Now</button>
+                        </div>
+                    `).join('') : '<p class="text-xs text-textMuted">No posts scheduled for this day.</p>'}
+                    <button onclick="openScheduleModal()" class="w-full py-2 bg-neutral-100 text-neutral-800 rounded-lg text-xs font-medium hover:bg-neutral-200">+ Add Post to this Date</button>
+                </div>
+            `);
+        }
+
+        // =========================================================================
+        // 6. ANALYTICS & LEADERBOARD DATA (PRD Section 6.8)
+        // =========================================================================
+        const topPostsData = [
+            { id: 1, title: '5 AI Tools That Save 20 Hours/Week', date: 'Oct 22, 2026', views: '248,600', likes: '24,200', shares: '4,100', retention: '94.2%', topPlatform: 'YouTube Shorts' },
+            { id: 2, title: 'Stop Using Redux in 2026 (State Management Guide)', date: 'Oct 18, 2026', views: '184,200', likes: '18,400', shares: '2,900', retention: '91.0%', topPlatform: 'TikTok' },
+            { id: 3, title: 'Next.js 15 Full-Stack Boilerplate in 60s', date: 'Oct 14, 2026', views: '142,500', likes: '16,200', shares: '3,200', retention: '89.4%', topPlatform: 'Instagram Reels' },
+            { id: 4, title: 'Mechanical Keyboard for Software Engineers', date: 'Oct 10, 2026', views: '98,400', likes: '8,400', shares: '1,120', retention: '86.1%', topPlatform: 'YouTube Shorts' }
+        ];
+
+        function renderAnalyticsLeaderboard() {
+            const container = document.getElementById('analytics-top-posts');
+            container.innerHTML = topPostsData.map(post => `
+                <div class="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-neutral-50 px-2 rounded-lg transition-colors">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-neutral-900 text-white">${post.topPlatform}</span>
+                            <span class="text-[11px] text-textMuted">${post.date}</span>
+                        </div>
+                        <h4 class="text-xs font-semibold text-neutral-900">${post.title}</h4>
+                    </div>
+                    <div class="flex items-center gap-5 text-xs font-medium">
+                        <div><span class="text-textMuted text-[10px] block">Views</span><span class="text-neutral-900 font-semibold">${post.views}</span></div>
+                        <div><span class="text-textMuted text-[10px] block">Likes</span><span class="text-neutral-900 font-semibold">${post.likes}</span></div>
+                        <div><span class="text-textMuted text-[10px] block">Shares</span><span class="text-neutral-900 font-semibold">${post.shares}</span></div>
+                        <div><span class="text-textMuted text-[10px] block">Retention</span><span class="text-emerald-700 font-semibold">${post.retention}</span></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function setAnalyticsTimeframe(tf, btn) {
+            document.querySelectorAll('.analytics-tf-btn').forEach(b => {
+                b.className = 'analytics-tf-btn px-2.5 py-1 rounded-md text-textMuted hover:text-neutral-900';
+            });
+            btn.className = 'analytics-tf-btn px-2.5 py-1 rounded-md bg-white shadow-xs font-medium text-neutral-900';
+            showToast(`Updated metrics for ${tf.toUpperCase()}`);
+        }
+
+        function exportAnalyticsCSV() {
+            const csv = "data:text/csv;charset=utf-8,Title,Date,Views,Likes,Shares,Retention,TopPlatform\n" +
+                topPostsData.map(e => `"${e.title}","${e.date}","${e.views}","${e.likes}","${e.shares}","${e.retention}","${e.topPlatform}"`).join("\n");
+            const uri = encodeURI(csv);
+            const link = document.createElement("a");
+            link.setAttribute("href", uri);
+            link.setAttribute("download", `social_post_hub_analytics_oct_2026.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('Downloaded analytics CSV export');
+        }
+
+        // =========================================================================
+        // 7. IDEAS BANK & AI CREATIVE STUDIO (PRD Section 6.9)
+        // =========================================================================
+        let ideasData = [
+            { id: 1, title: 'Why Bun is 3x faster than Node.js in 2026', notes: 'Show terminal benchmark live side-by-side with animated timer overlay.', reference: 'https://bun.sh', date: 'Oct 24', pillar: 'Tech Reviews' },
+            { id: 2, title: '5 AI Tools You Never Heard of for Web Design', notes: 'Focus on monochrome clean UI palettes and responsive CSS grid generators.', reference: 'https://github.com/trending', date: 'Oct 23', pillar: 'Productivity' },
+            { id: 3, title: 'How I Built a $10k/Month CRM Using Supabase', notes: 'Break down database schema, RLS policies, and resumable video uploads.', reference: 'https://supabase.com', date: 'Oct 20', pillar: 'Tutorials' },
+            { id: 4, title: 'Keyboard Typing ASMR + Coding Speedrun', notes: 'B-roll footage with high quality mic, top-down desk setup.', reference: 'Personal Setup', date: 'Oct 19', pillar: 'Sponsorship' }
+        ];
+
+        function renderIdeas() {
+            const grid = document.getElementById('ideas-grid');
+            document.getElementById('ideas-count').textContent = ideasData.length;
+            grid.innerHTML = ideasData.map(item => `
+                <div class="border border-borderLight rounded-xl p-5 bg-white hover:border-neutral-300 transition-colors flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-neutral-100 text-neutral-800">${item.pillar}</span>
+                            <span class="text-[11px] text-textMuted">${item.date}</span>
+                        </div>
+                        <h3 class="text-sm font-semibold text-neutral-900 mb-2 leading-snug">${item.title}</h3>
+                        <p class="text-xs text-textMuted leading-relaxed mb-3">${item.notes}</p>
+                        ${item.reference ? `<p class="text-[11px] text-neutral-500 truncate flex items-center gap-1"><i data-lucide="link" class="w-3 h-3"></i> ${item.reference}</p>` : ''}
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-borderLight flex items-center justify-between gap-2">
+                        <button onclick="convertIdeaToPipeline(${item.id})" class="px-3 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 transition-colors flex items-center gap-1">
+                            <i data-lucide="arrow-right-circle" class="w-3.5 h-3.5"></i>
+                            <span>Move to Pipeline</span>
+                        </button>
+                        <button onclick="deleteIdea(${item.id})" class="text-neutral-400 hover:text-red-600 text-xs">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function convertIdeaToPipeline(id) {
+            const item = ideasData.find(i => i.id === id);
+            if (item) {
+                pipelineItems.unshift({
+                    id: Date.now(),
+                    title: item.title,
+                    pillar: item.pillar,
+                    stage: 'Naskah',
+                    priority: 'High',
+                    due: 'Nov 04',
+                    checklist: '1/3',
+                    platforms: ['yt', 'ig', 'tt', 'fb']
+                });
+                ideasData = ideasData.filter(i => i.id !== id);
+                renderIdeas();
+                renderPipeline();
+                showToast(`Converted idea to Pipeline (Naskah)`);
+                switchPage('pipeline', document.querySelector('[data-page=pipeline]'));
+            }
+        }
+
+        function deleteIdea(id) {
+            ideasData = ideasData.filter(i => i.id !== id);
+            renderIdeas();
+            showToast('Idea removed');
+        }
+
+        function openNewIdeaModal() {
+            openModal('Capture Quick Content Idea', `
+                <div>
+                    <label class="block font-medium mb-1">Concept / Title</label>
+                    <input id="modal-idea-title" type="text" placeholder="e.g., Why Tailwind v4 is so fast" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Content Pillar</label>
+                    <select id="modal-idea-pillar" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                        <option value="Tech Reviews">Tech Reviews</option>
+                        <option value="Productivity">Productivity</option>
+                        <option value="Tutorials">Tutorials</option>
+                        <option value="Sponsorship">Sponsorship</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Reference URL (TikTok, YouTube, GitHub)</label>
+                    <input id="modal-idea-ref" type="text" placeholder="https://..." class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Notes / Brainstorm</label>
+                    <textarea id="modal-idea-notes" rows="3" placeholder="Key takeaways..." class="w-full px-3 py-2 border border-borderLight rounded-lg"></textarea>
+                </div>
+                <button onclick="saveNewIdea()" class="w-full py-2 rounded-lg bg-neutral-900 text-white font-medium hover:bg-neutral-800">Save Idea</button>
+            `);
+        }
+
+        function saveNewIdea() {
+            const title = document.getElementById('modal-idea-title').value.trim();
+            if (!title) return showToast('Please enter an idea title');
+            const pillar = document.getElementById('modal-idea-pillar').value;
+            const reference = document.getElementById('modal-idea-ref').value.trim();
+            const notes = document.getElementById('modal-idea-notes').value.trim() || 'No additional notes.';
+
+            ideasData.unshift({
+                id: Date.now(),
+                title,
+                pillar,
+                reference,
+                notes,
+                date: 'Just now'
+            });
+            renderIdeas();
+            closeModal();
+            showToast('New idea saved in Ideas Bank');
+        }
+
+        function generateAICreatives() {
+            const topic = document.getElementById('ai-niche-input').value.trim() || 'Next.js 15 Server Actions';
+            const output = document.getElementById('ai-output-box');
+            output.classList.remove('hidden');
+            output.innerHTML = `
+                <div class="flex items-center justify-between border-b border-borderLight pb-3">
+                    <span class="text-xs font-semibold text-neutral-900">Generated Creative Kit for "${topic}"</span>
+                    <button onclick="useAIGeneratedInComposer()" class="px-3 py-1 bg-neutral-900 text-white rounded text-xs font-medium hover:bg-neutral-800">Use in Composer →</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    <div class="p-3 rounded-lg border border-borderLight bg-sidebar">
+                        <p class="font-semibold text-neutral-900 mb-1">Viral Hooks (0–5s)</p>
+                        <ol class="list-decimal pl-4 space-y-1 text-textMuted leading-relaxed">
+                            <li>"If you still write API endpoints like this, stop right now..."</li>
+                            <li>"This 1 trick in Next.js 15 deleted 200 lines of boilerplate."</li>
+                            <li>"90% of solo devs don't know Server Actions can do this."</li>
+                        </ol>
+                    </div>
+                    <div class="p-3 rounded-lg border border-borderLight bg-sidebar">
+                        <p class="font-semibold text-neutral-900 mb-1">45s Video Outline</p>
+                        <p class="text-textMuted leading-relaxed">
+                            <strong>[0-5s]</strong> Hook & visual problem<br>
+                            <strong>[5-25s]</strong> Live code comparison on screen<br>
+                            <strong>[25-40s]</strong> Result & benchmark comparison<br>
+                            <strong>[40-45s]</strong> Call to action & bio link
+                        </p>
+                    </div>
+                    <div class="p-3 rounded-lg border border-borderLight bg-sidebar">
+                        <p class="font-semibold text-neutral-900 mb-1">Multi-Platform Caption</p>
+                        <p class="text-textMuted leading-relaxed font-mono text-[11px]">
+                            Stop wasting time writing manual route handlers in Next.js 15. Server Actions are production ready. 🚀<br><br>
+                            #nextjs #webdev #reactjs #fullstack
+                        </p>
+                    </div>
+                </div>
+            `;
+            showToast('Generated 3 viral hooks & 45s outline with AI');
+        }
+
+        function useAIGeneratedInComposer() {
+            document.getElementById('composer-title').value = "Next.js 15 Server Actions: Stop Writing Route Handlers";
+            document.getElementById('composer-caption').value = "Stop wasting time writing manual route handlers in Next.js 15. Server Actions are production ready and handle authentication, mutations, and caching automatically.\n\nSave this video and test it in your next fullstack build! #nextjs #webdev #coding";
+            updateCharCount('composer-title', 'title-char-count', 100);
+            updateCharCount('composer-caption', 'caption-char-count', 2200);
+            switchPage('compose', document.querySelector('[data-page=compose]'));
+            showToast('Loaded AI concepts into Universal Composer');
+        }
+
+        // =========================================================================
+        // 8. MEDIA ASSETS LIBRARY (PRD Section 6.4)
+        // =========================================================================
+        let mediaAssets = [
+            { id: 1, name: 'ai_tools_final_render.mp4', duration: '0:48', resolution: '1080x1920 (9:16)', size: '42.8 MB', date: 'Oct 24', usedIn: 'Published (4 platforms)' },
+            { id: 2, name: 'cursor_ai_screen_capture.mp4', duration: '1:12', resolution: '1080x1920 (9:16)', size: '64.2 MB', date: 'Oct 22', usedIn: 'Scheduled' },
+            { id: 3, name: 'supabase_migration_demo.mp4', duration: '0:58', resolution: '1080x1920 (9:16)', size: '51.0 MB', date: 'Oct 20', usedIn: 'Pipeline: Siap' },
+            { id: 4, name: 'keyboard_broll_raw_take3.mov', duration: '0:35', resolution: '1920x1080 (16:9)', size: '89.4 MB', date: 'Oct 18', usedIn: 'Editing Stage' }
+        ];
+
+        function renderMediaLibrary() {
+            const q = (document.getElementById('media-search')?.value || '').toLowerCase();
+            const grid = document.getElementById('media-assets-grid');
+            const filtered = mediaAssets.filter(m => m.name.toLowerCase().includes(q));
+
+            grid.innerHTML = filtered.map(m => `
+                <div class="border border-borderLight rounded-xl p-4 bg-white hover:border-neutral-300 transition-colors flex flex-col justify-between">
+                    <div>
+                        <div class="h-32 rounded-lg bg-neutral-900 text-white flex flex-col items-center justify-center p-3 relative overflow-hidden mb-3">
+                            <i data-lucide="film" class="w-8 h-8 opacity-60 mb-1"></i>
+                            <span class="text-[10px] font-mono text-neutral-300">${m.resolution}</span>
+                            <span class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/70 text-[10px] font-mono">${m.duration}</span>
+                        </div>
+                        <h4 class="text-xs font-semibold text-neutral-900 truncate mb-1" title="${m.name}">${m.name}</h4>
+                        <div class="flex items-center justify-between text-[11px] text-textMuted">
+                            <span>${m.size}</span>
+                            <span>${m.date}</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-borderLight flex items-center justify-between">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-neutral-100 text-neutral-800">${m.usedIn}</span>
+                        <button onclick="useAssetInComposer('${m.name}')" class="px-2.5 py-1 rounded bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 transition-colors">Use</button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function useAssetInComposer(name) {
+            document.getElementById('upload-status-heading').textContent = `Loaded from Library: ${name}`;
+            document.getElementById('upload-progress-container').classList.remove('hidden');
+            document.getElementById('upload-filename').textContent = name;
+            switchPage('compose', document.querySelector('[data-page=compose]'));
+            showToast(`Asset "${name}" attached to Composer`);
+        }
+
+        function handleNewMediaUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            mediaAssets.unshift({
+                id: Date.now(),
+                name: file.name,
+                duration: '0:50',
+                resolution: '1080x1920 (9:16)',
+                size: `${(file.size / (1024*1024)).toFixed(1)} MB`,
+                date: 'Just now',
+                usedIn: 'Unassigned'
+            });
+            renderMediaLibrary();
+            showToast(`Uploaded ${file.name} to Media Library`);
+        }
+
+        function pickFromMediaLibrary() {
+            switchPage('media', document.querySelector('[data-page=media]'));
+            showToast('Select any media asset and click "Use"');
+        }
+
+        // =========================================================================
+        // 9. CONNECTED SOCIAL ACCOUNTS (PRD Section 6.3 & API Limits)
+        // =========================================================================
+        let socialAccounts = [
+            { id: 'yt', platform: 'YouTube', account: 'Tech Pulse Studio', type: 'Channel (84.5k Subs)', tokenStatus: 'Active', quota: '8,400 / 10,000 units left', tokenExpiry: 'Expires in 28 days' },
+            { id: 'ig', platform: 'Instagram', account: '@techpulse.id', type: 'Business Creator (38.2k Followers)', tokenStatus: 'Active', quota: 'Unlimited (Standard Graph)', tokenExpiry: 'Expires in 52 days' },
+            { id: 'tt', platform: 'TikTok', account: '@techpulse_official', type: 'Direct Post API (124.8k Followers)', tokenStatus: 'Active', quota: 'Compliant & Verified', tokenExpiry: 'Expires in 14 days' },
+            { id: 'fb', platform: 'Facebook', account: 'Tech Pulse Official', type: 'Verified Page (19.4k Likes)', tokenStatus: 'Active', quota: 'Pages Graph API Active', tokenExpiry: 'Expires in 60 days' }
+        ];
+
+        function renderAccounts() {
+            const container = document.getElementById('accounts-list-container');
+            container.innerHTML = socialAccounts.map(acc => `
+                <div class="border border-borderLight rounded-xl p-5 bg-white flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-neutral-900 text-white flex items-center justify-center font-bold text-xs">
+                                    ${acc.id.toUpperCase()}
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-semibold text-neutral-900">${acc.account}</h3>
+                                    <p class="text-[11px] text-textMuted">${acc.type}</p>
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-badgeGreenBg text-badgeGreenText">${acc.tokenStatus}</span>
+                        </div>
+
+                        <div class="my-4 pt-3 border-t border-borderLight space-y-2 text-xs">
+                            <div class="flex justify-between text-neutral-700">
+                                <span class="text-textMuted">API Quota / Limits</span>
+                                <span class="font-medium text-neutral-900">${acc.quota}</span>
+                            </div>
+                            <div class="flex justify-between text-neutral-700">
+                                <span class="text-textMuted">Token Refresh</span>
+                                <span class="text-textMuted">${acc.tokenExpiry}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-borderLight flex items-center justify-between">
+                        <span class="text-[11px] text-textMuted">AES-256 Encrypted</span>
+                        <div class="flex items-center gap-2">
+                            <button onclick="reauthAccount('${acc.id}')" class="px-2.5 py-1 rounded text-xs border border-borderLight hover:bg-neutral-100 transition-colors">Re-auth</button>
+                            <button onclick="disconnectAccount('${acc.id}')" class="px-2.5 py-1 rounded text-xs text-red-600 hover:bg-red-50 transition-colors">Disconnect</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function reauthAccount(id) {
+            showToast(`Refreshed OAuth token for ${id.toUpperCase()}`);
+        }
+
+        function disconnectAccount(id) {
+            showToast(`Disconnected ${id.toUpperCase()} channel from workspace`);
+        }
+
+        function openConnectModal() {
+            openModal('Connect Social Channel (OAuth 2.0 PKCE)', `
+                <div class="space-y-3">
+                    <p class="text-xs text-textMuted">Select the platform to authorize into this workspace. Tokens are encrypted in accordance with PRD Security specs.</p>
+                    <button onclick="simulateOAuth('YouTube')" class="w-full py-2.5 px-3 rounded-lg border border-borderLight hover:bg-neutral-50 flex items-center justify-between text-xs font-semibold text-neutral-900">
+                        <span>Connect YouTube Channel</span>
+                        <span class="px-2 py-0.5 rounded bg-neutral-900 text-white text-[10px]">OAuth 2.0</span>
+                    </button>
+                    <button onclick="simulateOAuth('Instagram')" class="w-full py-2.5 px-3 rounded-lg border border-borderLight hover:bg-neutral-50 flex items-center justify-between text-xs font-semibold text-neutral-900">
+                        <span>Connect Instagram Business/Creator</span>
+                        <span class="px-2 py-0.5 rounded bg-neutral-900 text-white text-[10px]">Graph API</span>
+                    </button>
+                    <button onclick="simulateOAuth('TikTok')" class="w-full py-2.5 px-3 rounded-lg border border-borderLight hover:bg-neutral-50 flex items-center justify-between text-xs font-semibold text-neutral-900">
+                        <span>Connect TikTok Creator</span>
+                        <span class="px-2 py-0.5 rounded bg-neutral-900 text-white text-[10px]">Direct Post</span>
+                    </button>
+                    <button onclick="simulateOAuth('Facebook')" class="w-full py-2.5 px-3 rounded-lg border border-borderLight hover:bg-neutral-50 flex items-center justify-between text-xs font-semibold text-neutral-900">
+                        <span>Connect Facebook Verified Page</span>
+                        <span class="px-2 py-0.5 rounded bg-neutral-900 text-white text-[10px]">Page Token</span>
+                    </button>
+                </div>
+            `);
+        }
+
+        function simulateOAuth(platform) {
+            closeModal();
+            showToast(`Authorizing OAuth for ${platform}... connected!`);
+        }
+
+        // =========================================================================
+        // 10. SPONSOR CRM & CONTACTS (PRD Section 6.7.7)
+        // =========================================================================
+        let sponsorsData = [
+            { id: 1, name: 'Supabase Inc.', dealType: 'Dedicated Video Integration', value: '$2,500', status: 'Contract Signed', linked: 'Supabase vs Firebase in 2026' },
+            { id: 2, name: 'Keychron Keyboards', dealType: 'Hardware Showcase', value: '$1,200', status: 'In Review', linked: 'Mechanical Keyboard Setup' },
+            { id: 3, name: 'Linear App', dealType: 'Newsletter & Shorts Mention', value: '$1,800', status: 'Paid', linked: '5 AI Tools That Save 20 Hours' },
+            { id: 4, name: 'Vercel Edge Cloud', dealType: 'Sponsorship Pitch', value: '$3,000', status: 'Pitching', linked: 'Next.js 15 Server Actions' }
+        ];
+
+        function renderSponsors() {
+            const tbody = document.getElementById('contacts-table-body');
+            tbody.innerHTML = sponsorsData.map(s => `
+                <tr class="hover:bg-neutral-50">
+                    <td class="py-3 px-4 font-semibold text-neutral-900">${s.name}</td>
+                    <td class="py-3 px-4">${s.dealType}</td>
+                    <td class="py-3 px-4 font-semibold text-neutral-900">${s.value}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-medium ${s.status === 'Paid' || s.status === 'Contract Signed' ? 'bg-badgeGreenBg text-badgeGreenText' : 'bg-neutral-100 text-neutral-800'}">
+                            ${s.status}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-textMuted">${s.linked}</td>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick="showToast('Viewing deal terms with ${s.name}')" class="px-2.5 py-1 rounded border border-borderLight text-xs hover:bg-neutral-900 hover:text-white transition-colors">View Deal</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openNewSponsorModal() {
+            openModal('Add Brand Sponsor Deal', `
+                <div>
+                    <label class="block font-medium mb-1">Brand Name</label>
+                    <input id="modal-spon-name" type="text" placeholder="e.g., Raycast" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium mb-1">Deal Type</label>
+                        <input id="modal-spon-type" type="text" placeholder="Dedicated Video" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Contract Value ($)</label>
+                        <input id="modal-spon-val" type="text" placeholder="$2,000" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Linked Content Pipeline Item</label>
+                    <select id="modal-spon-link" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                        ${pipelineItems.map(p => `<option value="${p.title}">${p.title}</option>`).join('')}
+                    </select>
+                </div>
+                <button onclick="saveNewSponsor()" class="w-full py-2.5 rounded-lg bg-neutral-900 text-white font-medium hover:bg-neutral-800">Save Brand Deal</button>
+            `);
+        }
+
+        function saveNewSponsor() {
+            const name = document.getElementById('modal-spon-name').value.trim();
+            if (!name) return showToast('Brand name is required');
+            const dealType = document.getElementById('modal-spon-type').value.trim() || 'Integration';
+            const value = document.getElementById('modal-spon-val').value.trim() || '$1,500';
+            const linked = document.getElementById('modal-spon-link').value;
+
+            sponsorsData.unshift({
+                id: Date.now(),
+                name,
+                dealType,
+                value,
+                status: 'Contract Signed',
+                linked
+            });
+            renderSponsors();
+            closeModal();
+            showToast(`Added sponsorship deal with ${name}`);
+        }
+
+        // =========================================================================
+        // 11. NOTIFICATIONS & PUBLISH AUDIT LOGS (PRD Section 6.10)
+        // =========================================================================
+        let notificationsData = [
+            { id: 1, title: 'Publish Succeeded: 5 AI Tools', text: 'Parallel job completed across YouTube Shorts, Instagram Reels, TikTok, and Facebook Page.', time: '12 mins ago', type: 'publish', unread: true },
+            { id: 2, title: 'YouTube Quota Update', text: '1,600 units consumed for video upload. 8,400 units remaining for today.', time: '1 hour ago', type: 'token', unread: true },
+            { id: 3, title: 'TikTok Token Health Check', text: 'Direct Post API token active and verified. No re-authentication needed.', time: '3 hours ago', type: 'token', unread: false },
+            { id: 4, title: 'Scheduled Post Alert', text: 'Next.js 15 Server Actions is queued for today at 19:00 WIB.', time: 'Yesterday', type: 'publish', unread: false }
+        ];
+        let currentNotifFilter = 'all';
+
+        function renderNotifications() {
+            const container = document.getElementById('notifications-list');
+            const filtered = notificationsData.filter(n => {
+                if (currentNotifFilter === 'unread') return n.unread;
+                if (currentNotifFilter === 'publish') return n.type === 'publish';
+                if (currentNotifFilter === 'token') return n.type === 'token';
+                return true;
+            });
+
+            const unreadCount = notificationsData.filter(n => n.unread).length;
+            const badge = document.getElementById('sidebar-notif-badge');
+            badge.textContent = unreadCount;
+            badge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+
+            container.innerHTML = filtered.map(n => `
+                <div class="border border-borderLight rounded-xl p-4 bg-white hover:border-neutral-300 transition-colors flex items-start justify-between gap-4">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-neutral-900 text-white flex items-center justify-center text-xs font-semibold shrink-0">
+                            ${n.type === 'publish' ? '<i data-lucide="check" class="w-4 h-4"></i>' : '<i data-lucide="shield" class="w-4 h-4"></i>'}
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-semibold text-neutral-900">${n.title}</h4>
+                            <p class="text-xs text-textMuted leading-relaxed mt-0.5">${n.text}</p>
+                            <p class="text-[10px] text-textMuted mt-1">${n.time}</p>
+                        </div>
+                    </div>
+                    ${n.unread ? '<span class="w-2 h-2 rounded-full bg-neutral-900 shrink-0"></span>' : ''}
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function filterNotifications(filter, btn) {
+            currentNotifFilter = filter;
+            document.querySelectorAll('.notif-tab').forEach(t => {
+                t.className = 'notif-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-textMuted hover:bg-neutral-100';
+            });
+            btn.className = 'notif-tab px-3.5 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 text-white';
+            renderNotifications();
+        }
+
+        function markAllNotificationsRead() {
+            notificationsData.forEach(n => n.unread = false);
+            renderNotifications();
+            showToast('All notifications marked as read');
+        }
+
+        // =========================================================================
+        // 12. SETTINGS TABS & HELPERS
+        // =========================================================================
+        function switchSettingsTab(tabId, btn) {
+            document.querySelectorAll('.settings-panel').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`settings-panel-${tabId}`).classList.remove('hidden');
+            document.querySelectorAll('.settings-tab').forEach(b => {
+                b.className = 'settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-textMuted hover:text-neutral-900';
+            });
+            btn.className = 'settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-white shadow-xs text-neutral-900';
+        }
+
+        function saveProfileSettings() {
+            const name = document.getElementById('setting-name-input').value.trim() || 'Aji S.';
+            document.getElementById('header-username').textContent = name;
+            showToast('Creator profile updated');
+        }
+
+        function saveWorkspaceSettings() {
+            const ws = document.getElementById('setting-workspace-input').value.trim() || 'Tech Creator Brand';
+            document.getElementById('team-name').textContent = ws;
+            document.getElementById('team-avatar').textContent = ws.charAt(0).toUpperCase();
+            showToast('Workspace settings saved');
+        }
+
+        function openNewPillarModal() {
+            openModal('Add New Content Pillar', `
+                <div>
+                    <label class="block font-medium mb-1">Pillar Name</label>
+                    <input id="modal-pillar-name" type="text" placeholder="e.g., Coding Career Advice" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Description / Target Audience</label>
+                    <textarea id="modal-pillar-desc" rows="2" placeholder="Topics and themes..." class="w-full px-3 py-2 border border-borderLight rounded-lg"></textarea>
+                </div>
+                <button onclick="saveNewPillar()" class="w-full py-2 bg-neutral-900 text-white font-medium rounded-lg">Save Pillar</button>
+            `);
+        }
+
+        function saveNewPillar() {
+            const name = document.getElementById('modal-pillar-name').value.trim();
+            if (!name) return showToast('Pillar name required');
+            const desc = document.getElementById('modal-pillar-desc').value.trim() || 'Custom theme';
+            document.getElementById('pillars-list').innerHTML += `
+                <div class="p-3 border border-borderLight rounded-lg flex items-center justify-between">
+                    <div><p class="font-semibold text-neutral-900">${name}</p><p class="text-[11px] text-textMuted">${desc}</p></div>
+                    <span class="px-2.5 py-0.5 rounded bg-neutral-100 font-medium text-[11px]">Active</span>
+                </div>
+            `;
+            closeModal();
+            showToast(`Added content pillar "${name}"`);
+        }
+
+        // =========================================================================
+        // 13. SHARED UI HELPERS (MODALS, TOOLTIPS, SEARCH, WORKSPACE SWITCHER)
+        // =========================================================================
+        const tooltip = document.getElementById('custom-tooltip');
+        const tooltipText = document.getElementById('tooltip-text');
+
+        function showTooltip(e, text) {
+            tooltipText.textContent = text;
+            tooltip.style.opacity = '1';
+            tooltip.style.left = `${e.clientX + 12}px`;
+            tooltip.style.top = `${e.clientY - 28}px`;
+        }
+
+        function hideTooltip() {
+            tooltip.style.opacity = '0';
+        }
+
+        function openModal(title, bodyHTML) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-body').innerHTML = bodyHTML;
+            const modal = document.getElementById('universal-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('universal-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function toggleDropdown(id) {
+            document.getElementById(id).classList.toggle('hidden');
+        }
+
+        function toggleMobileSidebar() {
+            const sb = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sb.classList.toggle('-translate-x-full');
+            backdrop.classList.toggle('hidden');
+        }
+
+        const workspacesList = [
+            { name: "Tech Creator Brand", initial: 'T', accounts: '4 Accounts • WIB' },
+            { name: "Personal Lifestyle Brand", initial: 'P', accounts: '2 Accounts • WIB' },
+            { name: "Agency Studio Batch", initial: 'A', accounts: '8 Accounts • WIB' }
+        ];
+        let wsIdx = 0;
+        function cycleWorkspaceTeam() {
+            wsIdx = (wsIdx + 1) % workspacesList.length;
+            document.getElementById('team-name').textContent = workspacesList[wsIdx].name;
+            document.getElementById('team-avatar').textContent = workspacesList[wsIdx].initial;
+            showToast(`Switched workspace to "${workspacesList[wsIdx].name}"`);
+        }
+
+        function handleGlobalSearch(val) {
+            const q = val.trim().toLowerCase();
+            if (!q) return;
+            const pages = ['dashboard', 'compose', 'pipeline', 'calendar', 'analytics', 'ideas', 'media', 'accounts', 'contacts', 'notifications', 'settings'];
+            const match = pages.find(p => p.startsWith(q));
+            if (match) {
+                switchPage(match, document.querySelector(`[data-page=${match}]`));
+                showToast(`Jumped to ${match.toUpperCase()}`);
+            }
+        }
+
+        const timeframes = ['Week', 'Month', 'Year'];
+        function cycleTimeframe(btn, targetId, values) {
+            const span = btn.querySelector('span');
+            const currentIdx = timeframes.indexOf(span.textContent.trim());
+            const nextIdx = (currentIdx + 1) % timeframes.length;
+            span.textContent = timeframes[nextIdx];
+            if (targetId && values) {
+                document.getElementById(targetId).textContent = values[nextIdx];
+            }
+        }
+
+        const dateRanges = [
+            'Sun, 19 Oct - Sat, 25 Oct',
+            'Sun, 26 Oct - Sat, 01 Nov',
+            'Sun, 02 Nov - Sat, 08 Nov'
+        ];
+        function cycleDateRange(btn) {
+            const span = btn.querySelector('span');
+            const idx = dateRanges.indexOf(span.textContent.trim());
+            span.textContent = dateRanges[(idx + 1) % dateRanges.length];
+        }
+
+        let toastTimeout;
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = msg;
+            toast.classList.remove('translate-y-16', 'opacity-0');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('translate-y-16', 'opacity-0');
+            }, 2600);
+        }
+
+        function openHelpCenterModal() {
+            openModal('Social Post Hub — Documentation & Help', `
+                <div class="space-y-3 text-xs leading-relaxed">
+                    <p class="font-medium text-neutral-900">1-Click Multi-Platform Posting Guide:</p>
+                    <ul class="list-disc pl-5 space-y-1.5 text-textMuted">
+                        <li><strong>Resumable Video Upload:</strong> Uploading uses chunked resumable transfers, verifying aspect ratio 9:16 before dispatch.</li>
+                        <li><strong>Platform Overrides:</strong> Set unique titles and hashtags per channel while reusing the same video asset.</li>
+                        <li><strong>Parallel Publishing:</strong> Jobs execute simultaneously across YouTube, Instagram, TikTok, and Facebook.</li>
+                        <li><strong>CRM Pipeline:</strong> Advance content from Ide to Naskah, Produksi, Siap Posting, and Dianalisis.</li>
+                    </ul>
+                </div>
+            `);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                document.getElementById('global-search').focus();
+            }
+            if (e.key === 'Escape') closeModal();
+        });
+
+        window.addEventListener('click', (e) => {
+            const menu = document.getElementById('profile-menu');
+            if (!e.target.closest('#profile-menu') && !e.target.closest('button[onclick*="profile-menu"]')) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Initialize All Core Views
+        renderPipeline();
+        renderCalendar();
+        renderAnalyticsLeaderboard();
+        renderIdeas();
+        renderMediaLibrary();
+        renderAccounts();
+        renderSponsors();
+        renderNotifications();
+        lucide.createIcons();
+    </script>
+</body>
+</html>

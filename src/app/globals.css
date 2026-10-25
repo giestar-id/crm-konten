@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #171717;
+  }
+}
+
+body {
+  background-color: #ffffff;
+  color: #171717;
+  overflow-x: hidden;
+}
+
+/* Custom subtle scrollbars matching minimalist_ui_ux_dashboard */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D4D4D4;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A3A3A3;
+}
+
+/* Smooth transitions for interactive elements */
+.bar-segment, .heatmap-cell, .mini-bar, .kanban-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.bar-group:hover .bar-segment {
+  opacity: 0.85;
+}
+.heatmap-cell:hover {
+  transform: scale(1.18);
+  z-index: 10;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+}
+
+/* Page fade animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-view {
+  animation: fadeIn 0.22s ease-out;
+}

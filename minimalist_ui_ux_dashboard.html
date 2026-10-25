@@ -1,0 +1,1976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimalist Analytics Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        sidebar: '#FAFAFA',
+                        borderLight: '#EAEAEA',
+                        textMuted: '#737373',
+                        textDark: '#171717',
+                        badgeGreenBg: '#EAF5EE',
+                        badgeGreenText: '#2E7D47',
+                        badgeRedBg: '#FCECEC',
+                        badgeRedText: '#C93B3B',
+                        brandOrange: '#DF5835'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #171717;
+            background-color: #FFFFFF;
+            overflow-x: hidden;
+        }
+
+        /* Custom subtle scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D4D4D4;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #A3A3A3;
+        }
+
+        /* Smooth transitions for interactive elements */
+        .bar-segment, .heatmap-cell, .mini-bar {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .bar-group:hover .bar-segment {
+            opacity: 0.85;
+        }
+        .heatmap-cell:hover {
+            transform: scale(1.18);
+            z-index: 10;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+        }
+        
+        /* Custom Tooltip */
+        #custom-tooltip {
+            pointer-events: none;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+
+        /* View transition animation */
+        .page-view {
+            animation: fadeIn 0.22s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden bg-white select-none">
+
+    <!-- Floating Tooltip for Charts -->
+    <div id="custom-tooltip" class="fixed z-50 opacity-0 bg-neutral-900 text-white text-xs px-2.5 py-1.5 rounded-md shadow-lg transform -translate-y-2">
+        <span id="tooltip-text"></span>
+    </div>
+
+    <!-- Universal Modal Backdrop & Container -->
+    <div id="universal-modal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center p-4 backdrop-blur-[1px]">
+        <div class="bg-white border border-borderLight rounded-2xl max-w-md w-full p-6 shadow-2xl transform transition-all">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="modal-title" class="text-base font-semibold text-neutral-900">Modal Title</h3>
+                <button onclick="closeModal()" class="p-1 rounded-lg text-neutral-400 hover:text-neutral-800 hover:bg-neutral-100">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div id="modal-body" class="space-y-4 text-xs text-neutral-700">
+                <!-- Dynamic Modal Content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="sidebar-backdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/30 z-30 hidden lg:hidden transition-opacity"></div>
+
+    <!-- ==================== LEFT SIDEBAR ==================== -->
+    <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-[240px] bg-sidebar border-r border-borderLight flex flex-col justify-between transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out shrink-0">
+        
+        <!-- Top Logo & Navigation -->
+        <div class="overflow-y-auto">
+            <!-- Brand Header -->
+            <div class="h-16 px-5 flex items-center justify-between">
+                <a href="#" onclick="switchPage('dashboard', document.querySelector('[data-page=dashboard]'))" class="text-lg font-bold tracking-tight text-neutral-900">LOGO</a>
+                <button onclick="toggleSidebarCollapse()" title="Toggle Sidebar" class="w-6 h-6 rounded bg-neutral-200/70 hover:bg-neutral-300/70 flex items-center justify-center text-neutral-500 transition-colors">
+                    <i data-lucide="code" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+
+            <!-- Main Navigation List -->
+            <nav class="px-3 py-2 space-y-1">
+                <a href="#" data-page="dashboard" onclick="switchPage('dashboard', this)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium bg-[#EFEFEF] text-neutral-900 transition-colors">
+                    <i data-lucide="pie-chart" class="w-4 h-4 stroke-[2]"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" data-page="notifications" onclick="switchPage('notifications', this)" class="nav-item flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="bell" class="w-4 h-4"></i>
+                        <span>Notifications</span>
+                    </div>
+                    <span id="sidebar-notif-badge" class="px-1.5 py-0.5 text-[10px] font-semibold bg-neutral-900 text-white rounded-full">4</span>
+                </a>
+                <a href="#" data-page="notes" onclick="switchPage('notes', this)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                    <i data-lucide="sticky-note" class="w-4 h-4"></i>
+                    <span>Notes</span>
+                </a>
+                <a href="#" data-page="tasks" onclick="switchPage('tasks', this)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                    <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+                    <span>Tasks</span>
+                </a>
+                
+                <!-- Emails with Submenu toggle -->
+                <div>
+                    <button data-page="emails" onclick="handleEmailNavClick(this)" class="w-full nav-item flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="mail" class="w-4 h-4"></i>
+                            <span>Emails</span>
+                        </div>
+                        <i id="email-chevron" data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform duration-200"></i>
+                    </button>
+                    <div id="email-submenu" class="hidden pl-9 pr-3 py-1 space-y-1">
+                        <a href="#" onclick="filterEmailFolder('inbox'); return false;" class="email-sub-link block py-1 text-xs font-medium text-neutral-900 hover:text-neutral-900">Inbox (3)</a>
+                        <a href="#" onclick="filterEmailFolder('sent'); return false;" class="email-sub-link block py-1 text-xs text-textMuted hover:text-neutral-900">Sent</a>
+                        <a href="#" onclick="filterEmailFolder('drafts'); return false;" class="email-sub-link block py-1 text-xs text-textMuted hover:text-neutral-900">Drafts (1)</a>
+                        <a href="#" onclick="filterEmailFolder('starred'); return false;" class="email-sub-link block py-1 text-xs text-textMuted hover:text-neutral-900">Starred</a>
+                    </div>
+                </div>
+
+                <a href="#" data-page="calendars" onclick="switchPage('calendars', this)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                    <span>Calendars</span>
+                </a>
+            </nav>
+
+            <!-- Divider -->
+            <div class="my-3 border-t border-borderLight"></div>
+
+            <!-- Database Section -->
+            <div class="px-3 py-1">
+                <p class="px-3 mb-2 text-[11px] font-semibold tracking-wider text-neutral-400 uppercase">DATABASE</p>
+                <nav class="space-y-1">
+                    <a href="#" data-page="analytics" onclick="switchPage('analytics', this)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                        <i data-lucide="trending-up" class="w-4 h-4"></i>
+                        <span>Analytics</span>
+                    </a>
+                    <a href="#" data-page="contacts" onclick="switchPage('contacts', this)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                        <i data-lucide="contact-2" class="w-4 h-4"></i>
+                        <span>Contacts</span>
+                    </a>
+                    <a href="#" data-page="companies" onclick="switchPage('companies', this)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                        <i data-lucide="briefcase" class="w-4 h-4"></i>
+                        <span>Companies</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Divider -->
+            <div class="my-3 border-t border-borderLight"></div>
+
+            <!-- Settings & Integrations -->
+            <nav class="px-3 py-1 space-y-1">
+                <a href="#" data-page="integrations" onclick="switchPage('integrations', this)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                    <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                    <span>Integrations</span>
+                </a>
+                <a href="#" data-page="settings" onclick="switchPage('settings', this)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-textMuted hover:bg-neutral-200/50 hover:text-neutral-900 transition-colors">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Bottom Team Switcher -->
+        <div class="p-3 border-t border-borderLight shrink-0">
+            <button onclick="cycleWorkspaceTeam()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-neutral-200/60 transition-colors">
+                <div class="flex items-center gap-2.5">
+                    <div id="team-avatar" class="w-6 h-6 rounded bg-neutral-200 flex items-center justify-center text-xs font-semibold text-neutral-700">
+                        M
+                    </div>
+                    <span id="team-name" class="text-[13px] font-medium text-neutral-900">Marketing Team's</span>
+                </div>
+                <i data-lucide="chevrons-up-down" class="w-4 h-4 text-neutral-500"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        <!-- TOP NAVIGATION BAR -->
+        <header class="h-16 border-b border-borderLight bg-white px-4 lg:px-7 flex items-center justify-between shrink-0">
+            
+            <!-- Left: Mobile Menu Trigger + Search Input -->
+            <div class="flex items-center gap-3 flex-1 max-w-md">
+                <button onclick="toggleMobileSidebar()" class="lg:hidden p-2 rounded-lg border border-borderLight text-neutral-600 hover:bg-neutral-100">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+
+                <div class="relative w-full max-w-[300px]">
+                    <i data-lucide="search" class="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input 
+                        id="global-search"
+                        type="text" 
+                        oninput="handleGlobalSearch(this.value)"
+                        placeholder="Search" 
+                        class="w-full pl-9 pr-16 py-1.5 text-[13px] bg-white border border-borderLight rounded-lg focus:outline-none focus:border-neutral-400 text-neutral-800 placeholder-neutral-400 transition-colors"
+                    >
+                    <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        <kbd class="px-1.5 py-0.5 text-[10px] font-medium text-neutral-500 bg-neutral-100 rounded border border-neutral-200/80">⌘</kbd>
+                        <kbd class="px-1.5 py-0.5 text-[10px] font-medium text-neutral-500 bg-neutral-100 rounded border border-neutral-200/80">F</kbd>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Help Center & User Profile -->
+            <div class="flex items-center gap-6">
+                <button onclick="showToast('Opening Help Center & Documentation...')" class="flex items-center gap-2 text-[13px] font-medium text-textMuted hover:text-neutral-900 transition-colors">
+                    <i data-lucide="help-circle" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Help Center</span>
+                </button>
+
+                <!-- Profile Dropdown -->
+                <div class="relative">
+                    <button onclick="toggleDropdown('profile-menu')" class="flex items-center gap-2 text-[13px] font-semibold text-neutral-900 hover:text-neutral-700 transition-colors">
+                        <span id="header-username">John d.</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-neutral-600"></i>
+                    </button>
+                    <div id="profile-menu" class="hidden absolute right-0 mt-2 w-44 bg-white border border-borderLight rounded-lg shadow-lg py-1 z-50">
+                        <a href="#" onclick="switchPage('settings', document.querySelector('[data-page=settings]')); toggleDropdown('profile-menu');" class="block px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-100">My Profile & Settings</a>
+                        <a href="#" onclick="switchPage('notifications', document.querySelector('[data-page=notifications]')); toggleDropdown('profile-menu');" class="block px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-100">Notifications</a>
+                        <div class="my-1 border-t border-borderLight"></div>
+                        <a href="#" onclick="showToast('Signed out of session'); toggleDropdown('profile-menu');" class="block px-4 py-2 text-xs text-red-600 hover:bg-neutral-100">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ==================== SPA SCROLLABLE BODY ==================== -->
+        <main class="flex-1 overflow-y-auto px-4 lg:px-7 py-6">
+            <div class="max-w-[1280px] mx-auto">
+
+                <!-- =====================================================================
+                     PAGE 1: DASHBOARD (EXACT REFERENCE VIEW)
+                ====================================================================== -->
+                <section id="page-dashboard" class="page-view">
+                    <h1 class="text-[22px] font-semibold text-neutral-900 mb-5">Dashboard</h1>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
+                        <!-- LEFT & CENTER COLUMN (8 Cols) -->
+                        <div class="xl:col-span-8 space-y-5">
+                            <!-- ROW 1: Task Progress & Total Expenses -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <!-- Card 1: Task Progress -->
+                                <div class="border border-borderLight rounded-xl p-5 bg-white flex items-center justify-between hover:border-neutral-300 transition-colors">
+                                    <div class="flex items-center gap-5">
+                                        <div class="relative w-[86px] h-[86px] flex items-center justify-center shrink-0">
+                                            <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                                                <circle cx="50" cy="50" r="38" fill="none" stroke="#E5E5E5" stroke-width="14" />
+                                                <circle id="task-donut" cx="50" cy="50" r="38" fill="none" stroke="#111111" stroke-width="14" 
+                                                    stroke-dasharray="238.76" stroke-dashoffset="86" stroke-linecap="butt" 
+                                                    class="transition-all duration-700 ease-out" />
+                                            </svg>
+                                            <span class="absolute text-xs font-semibold text-neutral-900">64%</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-medium text-textMuted mb-1">Task Progress</p>
+                                            <h2 class="text-[22px] font-semibold tracking-tight text-neutral-900 leading-snug">435/500</h2>
+                                            <p class="text-xs text-textMuted mt-1">This Month</p>
+                                        </div>
+                                    </div>
+                                    <button onclick="switchPage('tasks', document.querySelector('[data-page=tasks]'))" class="w-7 h-7 rounded-full border border-neutral-700 flex items-center justify-center text-neutral-800 hover:bg-neutral-900 hover:text-white transition-colors self-start mt-1 shrink-0">
+                                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Card 2: Total Expenses -->
+                                <div class="border border-borderLight rounded-xl p-5 bg-white flex items-center justify-between gap-4 hover:border-neutral-300 transition-colors">
+                                    <div class="w-[125px] h-[82px] shrink-0 relative">
+                                        <svg viewBox="0 0 130 85" class="w-full h-full overflow-visible">
+                                            <defs>
+                                                <linearGradient id="expGrad" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stop-color="#171717" stop-opacity="0.16"/>
+                                                    <stop offset="100%" stop-color="#171717" stop-opacity="0.0"/>
+                                                </linearGradient>
+                                            </defs>
+                                            <line x1="10" y1="10" x2="10" y2="80" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="2.5,2.5" />
+                                            <line x1="33" y1="10" x2="33" y2="80" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="2.5,2.5" />
+                                            <line x1="56" y1="10" x2="56" y2="80" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="2.5,2.5" />
+                                            <line x1="79" y1="10" x2="79" y2="80" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="2.5,2.5" />
+                                            <line x1="102" y1="10" x2="102" y2="80" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="2.5,2.5" />
+                                            <line x1="122" y1="10" x2="122" y2="80" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="2.5,2.5" />
+                                            <path d="M5,20 L25,8 L58,36 L82,25 L103,15 L114,19 L123,13 L123,80 L5,80 Z" fill="url(#expGrad)" />
+                                            <path d="M5,20 L25,8 L58,36 L82,25 L103,15 L114,19 L123,13" fill="none" stroke="#111111" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-medium text-textMuted mb-1">Total Expenses</p>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <h2 class="text-[22px] font-semibold tracking-tight text-neutral-900 leading-snug">$8,414</h2>
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-badgeGreenBg text-badgeGreenText">
+                                                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>
+                                                12%
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-textMuted mt-1">This Month</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ROW 2: Task Management Summaries -->
+                            <div class="border border-borderLight rounded-xl p-5 bg-white">
+                                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5">
+                                    <div>
+                                        <p class="text-xs font-medium text-textMuted mb-1.5">Task Management Summaries</p>
+                                        <div class="flex items-center gap-2.5">
+                                            <h2 id="task-summary-total" class="text-[22px] font-semibold tracking-tight text-neutral-900">126 Task</h2>
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-badgeRedBg text-badgeRedText">
+                                                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 7l6 6 4-4 8 8"/><path d="M17 17h4v-4"/></svg>
+                                                4%
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-textMuted mt-1">This Week</p>
+                                    </div>
+                                    <div class="flex items-center gap-2.5 self-start sm:mt-4">
+                                        <button onclick="cycleDateRange(this)" class="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 flex items-center gap-2 hover:bg-neutral-50 transition-colors">
+                                            <span>Sun, 1 Dec - Sat, 7 Dec</span>
+                                            <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                        <button onclick="cycleTimeframe(this, 'task-summary-total', ['126 Task', '512 Task', '2,490 Task'])" class="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 flex items-center gap-2 hover:bg-neutral-50 transition-colors">
+                                            <span>Week</span>
+                                            <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-wrap items-center justify-center gap-6 mb-6 text-xs font-medium text-neutral-800">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full bg-[#0A0A0A]"></span>
+                                        <span>Marketing Teams</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full bg-[#4A4A4A]"></span>
+                                        <span>Design Teams</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full bg-[#787878]"></span>
+                                        <span>Production Teams</span>
+                                    </div>
+                                </div>
+
+                                <div class="relative pl-8 pr-2 pt-2 pb-7">
+                                    <div class="h-[190px] flex flex-col justify-between relative">
+                                        <div class="relative w-full border-b border-dashed border-neutral-200">
+                                            <span class="absolute -left-8 -top-2 text-[11px] text-neutral-600 font-medium">50</span>
+                                        </div>
+                                        <div class="relative w-full border-b border-dashed border-neutral-200">
+                                            <span class="absolute -left-8 -top-2 text-[11px] text-neutral-600 font-medium">35</span>
+                                        </div>
+                                        <div class="relative w-full border-b border-dashed border-neutral-200">
+                                            <span class="absolute -left-8 -top-2 text-[11px] text-neutral-600 font-medium">15</span>
+                                        </div>
+                                        <div class="relative w-full border-b border-dashed border-neutral-200">
+                                            <span class="absolute -left-7 -top-2 text-[11px] text-neutral-600 font-medium">0</span>
+                                        </div>
+                                        <div id="stacked-bars-container" class="absolute inset-x-0 -top-2 -bottom-3 grid grid-cols-7 items-end justify-items-center z-10"></div>
+                                    </div>
+                                    <div class="grid grid-cols-7 text-center mt-5 text-[11px] font-medium text-neutral-800">
+                                        <span>Sun, 1 Dec</span>
+                                        <span>Mon, 2 Dec</span>
+                                        <span>Tue, 3 Dec</span>
+                                        <span>Wed, 4 Dec</span>
+                                        <span>Thu, 5 Dec</span>
+                                        <span>Fri, 6 Dec</span>
+                                        <span>Sat, 7 Dec</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ROW 3: Total Revenue & Expenses Allocation -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <!-- Card 4: Total Revenue -->
+                                <div class="border border-borderLight rounded-xl p-5 bg-white flex flex-col justify-between">
+                                    <div class="flex items-start justify-between mb-4">
+                                        <div>
+                                            <p class="text-xs font-medium text-textMuted mb-1">Total Revenue</p>
+                                            <div class="flex items-center gap-2">
+                                                <h2 id="revenue-total" class="text-[22px] font-semibold tracking-tight text-neutral-900">$56,123k</h2>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-badgeGreenBg text-badgeGreenText">
+                                                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>
+                                                    12%
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button onclick="cycleTimeframe(this, 'revenue-total', ['$56,123k', '$14,820k', '$4,910k'])" class="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 flex items-center gap-1.5 hover:bg-neutral-50 transition-colors">
+                                            <span>Year</span>
+                                            <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                    <div class="mt-2">
+                                        <div class="h-[115px] w-full">
+                                            <svg viewBox="0 0 320 115" class="w-full h-full overflow-visible">
+                                                <defs>
+                                                    <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="0%" stop-color="#171717" stop-opacity="0.14"/>
+                                                        <stop offset="100%" stop-color="#171717" stop-opacity="0.0"/>
+                                                    </linearGradient>
+                                                </defs>
+                                                <line x1="16" y1="8" x2="16" y2="108" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="3,3" />
+                                                <line x1="88" y1="8" x2="88" y2="108" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="3,3" />
+                                                <line x1="160" y1="8" x2="160" y2="108" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="3,3" />
+                                                <line x1="232" y1="8" x2="232" y2="108" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="3,3" />
+                                                <line x1="304" y1="8" x2="304" y2="108" stroke="#D4D4D4" stroke-width="1" stroke-dasharray="3,3" />
+                                                <path d="M2,58 L30,12 L60,25 L88,20 L122,30 L150,43 L175,49 L210,20 L236,8 L270,15 L298,24 L318,20 L318,108 L2,108 Z" fill="url(#revGrad)" />
+                                                <path d="M2,58 L30,12 L60,25 L88,20 L122,30 L150,43 L175,49 L210,20 L236,8 L270,15 L298,24 L318,20" fill="none" stroke="#111111" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
+                                            </svg>
+                                        </div>
+                                        <div class="flex justify-between px-1 mt-2 text-[11px] font-medium text-neutral-800">
+                                            <span>2019</span><span>2020</span><span>2021</span><span>2022</span><span>2023</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card 5: Expenses Allocation -->
+                                <div class="border border-borderLight rounded-xl p-5 bg-white flex flex-col justify-between">
+                                    <div class="flex items-start justify-between mb-4">
+                                        <div>
+                                            <p class="text-xs font-medium text-textMuted mb-1">Expenses Allocation</p>
+                                            <div class="flex items-center gap-2">
+                                                <h2 id="allocation-total" class="text-[22px] font-semibold tracking-tight text-neutral-900">$44,171k</h2>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-badgeGreenBg text-badgeGreenText">
+                                                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>
+                                                    12%
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button onclick="cycleTimeframe(this, 'allocation-total', ['$44,171k', '$12,300k', '$148,900k'])" class="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 flex items-center gap-1.5 hover:bg-neutral-50 transition-colors">
+                                            <span>Month</span>
+                                            <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                    <div class="space-y-3.5 my-1">
+                                        <div class="grid grid-cols-12 items-center gap-2">
+                                            <span class="col-span-4 text-[11px] font-medium text-neutral-800">Production</span>
+                                            <div class="col-span-8 h-3.5 bg-[#D9D9D9] rounded-[3px] overflow-hidden cursor-pointer" onmousemove="showTooltip(event, 'Production: $10.5k (26%)')" onmouseleave="hideTooltip()">
+                                                <div class="h-full bg-[#0A0A0A] rounded-[3px] w-[26%]"></div>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-12 items-center gap-2">
+                                            <span class="col-span-4 text-[11px] font-medium text-neutral-800">Marketing</span>
+                                            <div class="col-span-8 h-3.5 bg-[#D9D9D9] rounded-[3px] overflow-hidden cursor-pointer" onmousemove="showTooltip(event, 'Marketing: $15.8k (39%)')" onmouseleave="hideTooltip()">
+                                                <div class="h-full bg-[#0A0A0A] rounded-[3px] w-[39%]"></div>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-12 items-center gap-2">
+                                            <span class="col-span-4 text-[11px] font-medium text-neutral-800">Operational</span>
+                                            <div class="col-span-8 h-3.5 bg-[#D9D9D9] rounded-[3px] overflow-hidden cursor-pointer" onmousemove="showTooltip(event, 'Operational: $23.2k (58%)')" onmouseleave="hideTooltip()">
+                                                <div class="h-full bg-[#0A0A0A] rounded-[3px] w-[58%]"></div>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-12 items-center gap-2">
+                                            <span class="col-span-4 text-[11px] font-medium text-neutral-800">Design</span>
+                                            <div class="col-span-8 h-3.5 bg-[#D9D9D9] rounded-[3px] overflow-hidden cursor-pointer" onmousemove="showTooltip(event, 'Design: $31.0k (77%)')" onmouseleave="hideTooltip()">
+                                                <div class="h-full bg-[#0A0A0A] rounded-[3px] w-[77%]"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-12 gap-2 mt-3">
+                                        <div class="col-span-4"></div>
+                                        <div class="col-span-8 flex justify-between text-[11px] font-medium text-neutral-800">
+                                            <span>0</span><span>10k</span><span>20k</span><span>30k</span><span>40k</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT COLUMN (4 Cols) -->
+                        <div class="xl:col-span-4 space-y-5">
+                            <!-- Right Card 1: Average Finished Task -->
+                            <div class="border border-borderLight rounded-xl p-5 bg-white">
+                                <div class="flex items-start justify-between mb-5">
+                                    <div>
+                                        <p class="text-xs font-medium text-textMuted mb-1">Average Finished Task</p>
+                                        <h2 id="avg-task-title" class="text-[22px] font-semibold tracking-tight text-neutral-900">± 52 Task</h2>
+                                        <p class="text-xs text-textMuted mt-1">This Month</p>
+                                    </div>
+                                    <button onclick="cycleTimeframe(this, 'avg-task-title', ['± 52 Task', '± 14 Task', '± 610 Task'])" class="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 flex items-center gap-1.5 hover:bg-neutral-50 transition-colors">
+                                        <span>Month</span>
+                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-7 text-center text-[11px] font-medium text-neutral-700 mb-3">
+                                    <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                                </div>
+                                <div id="heatmap-grid" class="grid grid-cols-7 gap-y-2.5 justify-items-center mb-5"></div>
+                                <div class="flex items-center justify-between pt-1 text-[11px]">
+                                    <span class="text-textMuted leading-tight max-w-[135px]">Learn about how we count workhours.</span>
+                                    <div class="flex items-center gap-1.5 font-medium text-neutral-800">
+                                        <span>Less</span>
+                                        <span class="w-2.5 h-2.5 bg-[#D4D4D4] inline-block"></span>
+                                        <span class="w-2.5 h-2.5 bg-[#9E9E9E] inline-block"></span>
+                                        <span class="w-2.5 h-2.5 bg-[#474747] inline-block"></span>
+                                        <span class="w-2.5 h-2.5 bg-[#0A0A0A] inline-block"></span>
+                                        <span>More</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Card 2: Highlighted Companies -->
+                            <div class="border border-borderLight rounded-xl p-5 bg-white">
+                                <div class="flex items-center justify-between mb-5">
+                                    <span class="text-xs font-medium text-textMuted">Highlighted Companies</span>
+                                    <button onmousemove="showTooltip(event, 'Top active partner company over the last 30 days')" onmouseleave="hideTooltip()" class="text-neutral-400 hover:text-neutral-700 transition-colors">
+                                        <i data-lucide="info" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                                <div class="flex flex-col items-center text-center">
+                                    <div class="w-11 h-11 rounded-full bg-brandOrange flex items-center justify-center text-white text-xl font-bold mb-2.5 shadow-sm">
+                                        P
+                                    </div>
+                                    <h3 class="text-[15px] font-semibold text-neutral-900">Product Hunt</h3>
+                                    <p class="text-[11px] text-textMuted mt-0.5">Web Design</p>
+                                    <div class="text-[28px] font-semibold text-neutral-900 tracking-tight mt-3 mb-1">1,641</div>
+                                    <p class="text-xs text-neutral-700 leading-relaxed max-w-[180px]">Total Transaction & Activities in Last Month</p>
+                                </div>
+                                <div id="company-bars" class="mt-6 pt-2 flex items-end justify-between gap-1.5 h-[54px] px-1"></div>
+                            </div>
+
+                            <!-- Right Card 3: Completed Task -->
+                            <div class="border border-borderLight rounded-xl p-5 bg-white">
+                                <p class="text-xs font-medium text-textMuted mb-3">Completed Task</p>
+                                <div class="flex items-center justify-between">
+                                    <h2 class="text-[22px] font-semibold tracking-tight text-neutral-900">44 Task</h2>
+                                    <button onclick="switchPage('tasks', document.querySelector('[data-page=tasks]'))" class="px-3.5 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors">
+                                        View All
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 2: NOTIFICATIONS
+                ====================================================================== -->
+                <section id="page-notifications" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Notifications</h1>
+                            <p class="text-xs text-textMuted mt-1">Stay updated on team mentions, task progress, and system alerts.</p>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            <button onclick="markAllNotificationsRead()" class="px-3.5 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors flex items-center gap-1.5">
+                                <i data-lucide="check-check" class="w-3.5 h-3.5"></i>
+                                <span>Mark all as read</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filter Tabs -->
+                    <div class="flex items-center gap-2 border-b border-borderLight pb-3 mb-5 overflow-x-auto">
+                        <button onclick="filterNotifications('all', this)" class="notif-tab px-3.5 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 text-white">All Activity</button>
+                        <button onclick="filterNotifications('unread', this)" class="notif-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-textMuted hover:bg-neutral-100">Unread</button>
+                        <button onclick="filterNotifications('mentions', this)" class="notif-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-textMuted hover:bg-neutral-100">Mentions (@)</button>
+                        <button onclick="filterNotifications('system', this)" class="notif-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-textMuted hover:bg-neutral-100">System & Billing</button>
+                    </div>
+
+                    <!-- Notifications Feed Container -->
+                    <div id="notifications-list" class="space-y-3"></div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 3: NOTES
+                ====================================================================== -->
+                <section id="page-notes" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Workspace Notes</h1>
+                            <p class="text-xs text-textMuted mt-1">Shared documentation, meeting minutes, and creative briefs.</p>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            <select id="notes-tag-filter" onchange="renderNotes()" class="px-3 py-1.5 rounded-lg border border-borderLight text-xs font-medium text-neutral-800 focus:outline-none">
+                                <option value="All">All Teams</option>
+                                <option value="Marketing">Marketing</option>
+                                <option value="Design">Design</option>
+                                <option value="Production">Production</option>
+                            </select>
+                            <button onclick="openNewNoteModal()" class="px-3.5 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 transition-colors flex items-center gap-1.5">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                <span>New Note</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="notes-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 4: TASKS
+                ====================================================================== -->
+                <section id="page-tasks" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Tasks Management</h1>
+                            <p class="text-xs text-textMuted mt-1">Track deliverables across Marketing, Design, and Production sprints.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2.5">
+                            <div class="inline-flex rounded-lg border border-borderLight p-0.5 bg-sidebar">
+                                <button id="btn-view-kanban" onclick="toggleTaskView('kanban')" class="px-3 py-1 rounded-md text-xs font-medium bg-white shadow-sm text-neutral-900">Board</button>
+                                <button id="btn-view-list" onclick="toggleTaskView('list')" class="px-3 py-1 rounded-md text-xs font-medium text-textMuted hover:text-neutral-900">List</button>
+                            </div>
+                            <select id="task-team-filter" onchange="renderTasks()" class="px-3 py-1.5 rounded-lg border border-borderLight text-xs font-medium text-neutral-800 focus:outline-none">
+                                <option value="All">All Teams</option>
+                                <option value="Marketing">Marketing</option>
+                                <option value="Design">Design</option>
+                                <option value="Production">Production</option>
+                            </select>
+                            <button onclick="openNewTaskModal()" class="px-3.5 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 transition-colors flex items-center gap-1.5">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                <span>Add Task</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Kanban View -->
+                    <div id="tasks-kanban-view" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5"></div>
+
+                    <!-- Table List View -->
+                    <div id="tasks-list-view" class="hidden border border-borderLight rounded-xl bg-white overflow-x-auto"></div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 5: EMAILS
+                ====================================================================== -->
+                <section id="page-emails" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Emails</h1>
+                            <p id="email-folder-subtitle" class="text-xs text-textMuted mt-0.5">Folder: Inbox • Connected to team@workspace.io</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="filterEmailFolder('inbox')" class="email-folder-btn px-3 py-1.5 rounded-lg border border-borderLight text-xs font-medium bg-neutral-900 text-white" data-folder="inbox">Inbox</button>
+                            <button onclick="filterEmailFolder('sent')" class="email-folder-btn px-3 py-1.5 rounded-lg border border-borderLight text-xs font-medium text-neutral-700 hover:bg-neutral-100" data-folder="sent">Sent</button>
+                            <button onclick="filterEmailFolder('drafts')" class="email-folder-btn px-3 py-1.5 rounded-lg border border-borderLight text-xs font-medium text-neutral-700 hover:bg-neutral-100" data-folder="drafts">Drafts</button>
+                            <button onclick="filterEmailFolder('starred')" class="email-folder-btn px-3 py-1.5 rounded-lg border border-borderLight text-xs font-medium text-neutral-700 hover:bg-neutral-100" data-folder="starred">Starred</button>
+                            <button onclick="openComposeEmailModal()" class="ml-2 px-3.5 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 flex items-center gap-1.5">
+                                <i data-lucide="pen-square" class="w-3.5 h-3.5"></i>
+                                <span>Compose</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 border border-borderLight rounded-xl bg-white overflow-hidden min-h-[540px]">
+                        <!-- Left Email Thread List -->
+                        <div id="email-list-pane" class="lg:col-span-5 border-b lg:border-b-0 lg:border-r border-borderLight divide-y divide-borderLight overflow-y-auto max-h-[560px]"></div>
+                        <!-- Right Email Reader & Reply -->
+                        <div id="email-detail-pane" class="lg:col-span-7 p-6 flex flex-col justify-between bg-white"></div>
+                    </div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 6: CALENDARS
+                ====================================================================== -->
+                <section id="page-calendars" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Calendars & Schedule</h1>
+                            <p class="text-xs text-textMuted mt-1">December 2024 • Team Sprints, Launches & Reviews</p>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            <button onclick="showToast('Synced with Google Calendar')" class="px-3 py-1.5 rounded-lg border border-borderLight text-xs font-medium text-neutral-800 hover:bg-neutral-50 flex items-center gap-1.5">
+                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                                <span>Sync</span>
+                            </button>
+                            <button onclick="openNewEventModal()" class="px-3.5 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 flex items-center gap-1.5">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                <span>Add Event</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
+                        <!-- 7-Col Month Grid -->
+                        <div class="xl:col-span-9 border border-borderLight rounded-xl bg-white overflow-hidden">
+                            <div class="grid grid-cols-7 border-b border-borderLight bg-sidebar text-center py-2.5 text-xs font-semibold text-neutral-700">
+                                <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                            </div>
+                            <div id="calendar-days-grid" class="grid grid-cols-7 divide-x divide-y divide-borderLight"></div>
+                        </div>
+
+                        <!-- Upcoming Schedule Sidebar -->
+                        <div class="xl:col-span-3 space-y-4">
+                            <div class="border border-borderLight rounded-xl p-5 bg-white">
+                                <h3 class="text-sm font-semibold text-neutral-900 mb-3">Upcoming Events</h3>
+                                <div id="upcoming-events-list" class="space-y-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 7: ANALYTICS (DATABASE)
+                ====================================================================== -->
+                <section id="page-analytics" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Database Analytics</h1>
+                            <p class="text-xs text-textMuted mt-1">Deep-dive conversion metrics, team velocity, and channel attribution.</p>
+                        </div>
+                        <button onclick="showToast('Exported analytics_dec_2024.csv')" class="px-3.5 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors flex items-center gap-1.5 self-start">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                            <span>Export CSV</span>
+                        </button>
+                    </div>
+
+                    <!-- KPI Row -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-5">
+                        <div class="border border-borderLight rounded-xl p-5 bg-white">
+                            <p class="text-xs text-textMuted mb-1">Conversion Rate</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl font-semibold text-neutral-900">4.82%</span>
+                                <span class="px-2 py-0.5 text-[11px] font-medium rounded-full bg-badgeGreenBg text-badgeGreenText">+0.9%</span>
+                            </div>
+                            <p class="text-[11px] text-textMuted mt-2">vs. 3.92% last month</p>
+                        </div>
+                        <div class="border border-borderLight rounded-xl p-5 bg-white">
+                            <p class="text-xs text-textMuted mb-1">Active Workspace Users</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl font-semibold text-neutral-900">18,490</span>
+                                <span class="px-2 py-0.5 text-[11px] font-medium rounded-full bg-badgeGreenBg text-badgeGreenText">+16%</span>
+                            </div>
+                            <p class="text-[11px] text-textMuted mt-2">Daily active average: 6,120</p>
+                        </div>
+                        <div class="border border-borderLight rounded-xl p-5 bg-white">
+                            <p class="text-xs text-textMuted mb-1">Avg. Task Resolution</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl font-semibold text-neutral-900">3.4 hrs</span>
+                                <span class="px-2 py-0.5 text-[11px] font-medium rounded-full bg-badgeGreenBg text-badgeGreenText">-18% faster</span>
+                            </div>
+                            <p class="text-[11px] text-textMuted mt-2">Across 435 completed tasks</p>
+                        </div>
+                        <div class="border border-borderLight rounded-xl p-5 bg-white">
+                            <p class="text-xs text-textMuted mb-1">Client Retention</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl font-semibold text-neutral-900">94.2%</span>
+                                <span class="px-2 py-0.5 text-[11px] font-medium rounded-full bg-badgeRedBg text-badgeRedText">-0.4%</span>
+                            </div>
+                            <p class="text-[11px] text-textMuted mt-2">Enterprise B2B cohort</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                        <!-- Channel Attribution -->
+                        <div class="lg:col-span-5 border border-borderLight rounded-xl p-5 bg-white">
+                            <h3 class="text-sm font-semibold text-neutral-900 mb-4">Traffic & Acquisition Channels</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between text-xs font-medium mb-1"><span>Organic Search & SEO</span><span>42%</span></div>
+                                    <div class="h-2.5 bg-neutral-200 rounded-full overflow-hidden"><div class="h-full bg-[#0A0A0A] w-[42%]"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs font-medium mb-1"><span>Product Hunt & Referrals</span><span>28%</span></div>
+                                    <div class="h-2.5 bg-neutral-200 rounded-full overflow-hidden"><div class="h-full bg-[#4A4A4A] w-[28%]"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs font-medium mb-1"><span>Direct Enterprise Outbound</span><span>19%</span></div>
+                                    <div class="h-2.5 bg-neutral-200 rounded-full overflow-hidden"><div class="h-full bg-[#787878] w-[19%]"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs font-medium mb-1"><span>Social Campaigns</span><span>11%</span></div>
+                                    <div class="h-2.5 bg-neutral-200 rounded-full overflow-hidden"><div class="h-full bg-[#A3A3A3] w-[11%]"></div></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Department Output Table -->
+                        <div class="lg:col-span-7 border border-borderLight rounded-xl p-5 bg-white overflow-x-auto">
+                            <h3 class="text-sm font-semibold text-neutral-900 mb-4">Department Efficiency Breakdown</h3>
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="border-b border-borderLight text-textMuted">
+                                        <th class="pb-2.5 font-medium">Department</th>
+                                        <th class="pb-2.5 font-medium">Completed</th>
+                                        <th class="pb-2.5 font-medium">Budget Used</th>
+                                        <th class="pb-2.5 font-medium">Velocity Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-borderLight text-neutral-800">
+                                    <tr>
+                                        <td class="py-3 font-medium">Marketing Teams</td>
+                                        <td class="py-3">168 Tasks</td>
+                                        <td class="py-3">$15,800</td>
+                                        <td class="py-3"><span class="px-2 py-0.5 rounded-full bg-badgeGreenBg text-badgeGreenText font-medium">96 / 100</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-3 font-medium">Design Teams</td>
+                                        <td class="py-3">142 Tasks</td>
+                                        <td class="py-3">$31,000</td>
+                                        <td class="py-3"><span class="px-2 py-0.5 rounded-full bg-badgeGreenBg text-badgeGreenText font-medium">92 / 100</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-3 font-medium">Production Teams</td>
+                                        <td class="py-3">125 Tasks</td>
+                                        <td class="py-3">$10,500</td>
+                                        <td class="py-3"><span class="px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-800 font-medium">88 / 100</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 8: CONTACTS (DATABASE)
+                ====================================================================== -->
+                <section id="page-contacts" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Contacts Directory</h1>
+                            <p class="text-xs text-textMuted mt-1">Manage stakeholders, client decision-makers, and partner contacts.</p>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            <input id="contact-search" oninput="renderContacts()" type="text" placeholder="Filter by name or company..." class="px-3 py-1.5 text-xs border border-borderLight rounded-lg focus:outline-none focus:border-neutral-500">
+                            <button onclick="openNewContactModal()" class="px-3.5 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 flex items-center gap-1.5">
+                                <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+                                <span>Add Contact</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="border border-borderLight rounded-xl bg-white overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b border-borderLight bg-sidebar text-textMuted">
+                                    <th class="py-3 px-4 font-medium">Contact</th>
+                                    <th class="py-3 px-4 font-medium">Role</th>
+                                    <th class="py-3 px-4 font-medium">Company</th>
+                                    <th class="py-3 px-4 font-medium">Status</th>
+                                    <th class="py-3 px-4 font-medium">Last Activity</th>
+                                    <th class="py-3 px-4 font-medium text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contacts-table-body" class="divide-y divide-borderLight"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 9: COMPANIES (DATABASE)
+                ====================================================================== -->
+                <section id="page-companies" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Partner Companies</h1>
+                            <p class="text-xs text-textMuted mt-1">B2B accounts, transaction volumes, and active retainers.</p>
+                        </div>
+                        <button onclick="openNewCompanyModal()" class="px-3.5 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800 flex items-center gap-1.5 self-start">
+                            <i data-lucide="building-2" class="w-3.5 h-3.5"></i>
+                            <span>Add Company</span>
+                        </button>
+                    </div>
+
+                    <div id="companies-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 10: INTEGRATIONS
+                ====================================================================== -->
+                <section id="page-integrations" class="page-view hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-[22px] font-semibold text-neutral-900">Integrations & Connected Apps</h1>
+                            <p class="text-xs text-textMuted mt-1">Supercharge your workflow by connecting third-party tools and webhooks.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="filterIntegrations('all', this)" class="integ-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 text-white">All Apps</button>
+                            <button onclick="filterIntegrations('connected', this)" class="integ-tab px-3 py-1.5 rounded-lg text-xs font-medium text-textMuted hover:bg-neutral-100">Connected</button>
+                        </div>
+                    </div>
+
+                    <div id="integrations-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+                </section>
+
+                <!-- =====================================================================
+                     PAGE 11: SETTINGS
+                ====================================================================== -->
+                <section id="page-settings" class="page-view hidden">
+                    <div class="mb-6">
+                        <h1 class="text-[22px] font-semibold text-neutral-900">Settings & Preferences</h1>
+                        <p class="text-xs text-textMuted mt-1">Configure your personal profile, workspace defaults, and team permissions.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        <!-- Settings Sub-nav -->
+                        <div class="lg:col-span-3 border border-borderLight rounded-xl p-2 bg-sidebar space-y-1">
+                            <button onclick="switchSettingsTab('profile', this)" class="settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-white shadow-sm text-neutral-900">My Profile</button>
+                            <button onclick="switchSettingsTab('workspace', this)" class="settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-textMuted hover:text-neutral-900">Workspace & Branding</button>
+                            <button onclick="switchSettingsTab('members', this)" class="settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-textMuted hover:text-neutral-900">Team Members</button>
+                            <button onclick="switchSettingsTab('billing', this)" class="settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-textMuted hover:text-neutral-900">Billing & Plans</button>
+                        </div>
+
+                        <!-- Settings Content Area -->
+                        <div class="lg:col-span-9 border border-borderLight rounded-xl p-6 bg-white">
+                            <!-- Tab: Profile -->
+                            <div id="settings-panel-profile" class="settings-panel space-y-5">
+                                <h3 class="text-sm font-semibold text-neutral-900 border-b border-borderLight pb-3">Personal Information</h3>
+                                <div class="flex items-center gap-4">
+                                    <div class="w-14 h-14 rounded-full bg-neutral-900 text-white flex items-center justify-center text-lg font-bold">JD</div>
+                                    <div>
+                                        <p class="text-xs font-semibold text-neutral-900">John Doe</p>
+                                        <p class="text-[11px] text-textMuted">Lead Product Designer • Marketing Team</p>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-neutral-700 mb-1">Display Name</label>
+                                        <input id="setting-name-input" type="text" value="John d." class="w-full px-3 py-2 text-xs border border-borderLight rounded-lg focus:outline-none focus:border-neutral-600">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-neutral-700 mb-1">Email Address</label>
+                                        <input type="email" value="john.doe@workspace.io" class="w-full px-3 py-2 text-xs border border-borderLight rounded-lg focus:outline-none focus:border-neutral-600">
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-xs font-medium text-neutral-700 mb-1">Role & Bio</label>
+                                        <textarea rows="3" class="w-full px-3 py-2 text-xs border border-borderLight rounded-lg focus:outline-none focus:border-neutral-600">Overseeing minimalist design systems, analytics dashboards, and Q4 campaign execution.</textarea>
+                                    </div>
+                                </div>
+                                <div class="pt-2">
+                                    <button onclick="saveProfileSettings()" class="px-4 py-2 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800">Save Changes</button>
+                                </div>
+                            </div>
+
+                            <!-- Tab: Workspace -->
+                            <div id="settings-panel-workspace" class="settings-panel hidden space-y-5">
+                                <h3 class="text-sm font-semibold text-neutral-900 border-b border-borderLight pb-3">Workspace Configuration</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-neutral-700 mb-1">Workspace Name</label>
+                                        <input id="setting-workspace-input" type="text" value="Marketing Team's" class="w-full px-3 py-2 text-xs border border-borderLight rounded-lg">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-neutral-700 mb-1">Fiscal Currency</label>
+                                        <select class="w-full px-3 py-2 text-xs border border-borderLight rounded-lg">
+                                            <option>USD ($)</option>
+                                            <option>EUR (€)</option>
+                                            <option>IDR (Rp)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between pt-2 border-t border-borderLight">
+                                    <div>
+                                        <p class="text-xs font-medium text-neutral-900">Automatic Workhour Counting</p>
+                                        <p class="text-[11px] text-textMuted">Include weekend commits in the Average Finished Task heatmap.</p>
+                                    </div>
+                                    <input type="checkbox" checked class="accent-neutral-900 w-4 h-4">
+                                </div>
+                                <button onclick="saveWorkspaceSettings()" class="px-4 py-2 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800">Update Workspace</button>
+                            </div>
+
+                            <!-- Tab: Members -->
+                            <div id="settings-panel-members" class="settings-panel hidden space-y-4">
+                                <div class="flex items-center justify-between border-b border-borderLight pb-3">
+                                    <h3 class="text-sm font-semibold text-neutral-900">Active Team Members (4)</h3>
+                                    <button onclick="showToast('Invitation link copied to clipboard')" class="px-3 py-1.5 rounded-lg border border-neutral-700 text-xs font-medium">Invite Member</button>
+                                </div>
+                                <div class="divide-y divide-borderLight text-xs">
+                                    <div class="py-3 flex items-center justify-between">
+                                        <div><p class="font-medium text-neutral-900">John Doe (You)</p><p class="text-textMuted">john.doe@workspace.io</p></div>
+                                        <span class="px-2.5 py-1 rounded-md bg-neutral-100 font-medium">Owner</span>
+                                    </div>
+                                    <div class="py-3 flex items-center justify-between">
+                                        <div><p class="font-medium text-neutral-900">Sarah Jenkins</p><p class="text-textMuted">sarah.j@workspace.io</p></div>
+                                        <span class="px-2.5 py-1 rounded-md bg-neutral-100 font-medium">Design Lead</span>
+                                    </div>
+                                    <div class="py-3 flex items-center justify-between">
+                                        <div><p class="font-medium text-neutral-900">Alex Rivera</p><p class="text-textMuted">alex.r@workspace.io</p></div>
+                                        <span class="px-2.5 py-1 rounded-md bg-neutral-100 font-medium">Marketing</span>
+                                    </div>
+                                    <div class="py-3 flex items-center justify-between">
+                                        <div><p class="font-medium text-neutral-900">Mina Kusuma</p><p class="text-textMuted">mina.k@workspace.io</p></div>
+                                        <span class="px-2.5 py-1 rounded-md bg-neutral-100 font-medium">Production</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab: Billing -->
+                            <div id="settings-panel-billing" class="settings-panel hidden space-y-4">
+                                <h3 class="text-sm font-semibold text-neutral-900 border-b border-borderLight pb-3">Subscription & Usage</h3>
+                                <div class="p-4 rounded-xl bg-sidebar border border-borderLight flex items-center justify-between">
+                                    <div>
+                                        <span class="px-2 py-0.5 text-[10px] font-semibold uppercase bg-neutral-900 text-white rounded">Pro Workspace</span>
+                                        <h4 class="text-base font-semibold text-neutral-900 mt-1">$49 / month</h4>
+                                        <p class="text-xs text-textMuted">Next invoice on Jan 1, 2025 • Visa ending in 4242</p>
+                                    </div>
+                                    <button onclick="showToast('Billing portal opened')" class="px-3.5 py-1.5 rounded-lg border border-neutral-800 text-xs font-medium hover:bg-neutral-900 hover:text-white transition-colors">Manage Plan</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Notification Toast for UI Feedback -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 bg-neutral-900 text-white text-xs font-medium px-4 py-2.5 rounded-lg shadow-xl transform translate-y-16 opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-2">
+        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+        <span id="toast-message">Action completed</span>
+    </div>
+
+    <!-- ==================== INTERACTIVE JAVASCRIPT ==================== -->
+    <script>
+        // =========================================================================
+        // 1. ORIGINAL DASHBOARD CHARTS INITIALIZATION
+        // =========================================================================
+        const stackedBarData = [
+            { day: 'Sun, 1 Dec', segments: [{ h: 28, c: '#D6D6D6', team: 'Other' }, { h: 22, c: '#787878', team: 'Production' }, { h: 34, c: '#4A4A4A', team: 'Design' }, { h: 16, c: '#0A0A0A', team: 'Marketing' }] },
+            { day: 'Mon, 2 Dec', segments: [{ h: 24, c: '#D6D6D6', team: 'Other' }, { h: 28, c: '#787878', team: 'Production' }, { h: 22, c: '#4A4A4A', team: 'Design' }, { h: 26, c: '#0A0A0A', team: 'Marketing' }] },
+            { day: 'Tue, 3 Dec', segments: [{ h: 24, c: '#D6D6D6', team: 'Other' }, { h: 36, c: '#787878', team: 'Production' }, { h: 23, c: '#4A4A4A', team: 'Design' }, { h: 17, c: '#0A0A0A', team: 'Marketing' }] },
+            { day: 'Wed, 4 Dec', segments: [{ h: 24, c: '#D6D6D6', team: 'Other' }, { h: 32, c: '#787878', team: 'Production' }, { h: 22, c: '#4A4A4A', team: 'Design' }, { h: 22, c: '#0A0A0A', team: 'Marketing' }] },
+            { day: 'Thu, 5 Dec', segments: [{ h: 8,  c: '#D6D6D6', team: 'Other' }, { h: 39, c: '#787878', team: 'Production' }, { h: 16, c: '#4A4A4A', team: 'Design' }, { h: 37, c: '#0A0A0A', team: 'Marketing' }] },
+            { day: 'Fri, 6 Dec', segments: [{ h: 18, c: '#D6D6D6', team: 'Other' }, { h: 16, c: '#787878', team: 'Production' }, { h: 44, c: '#4A4A4A', team: 'Design' }, { h: 22, c: '#0A0A0A', team: 'Marketing' }] },
+            { day: 'Sat, 7 Dec', segments: [{ h: 14, c: '#D6D6D6', team: 'Other' }, { h: 10, c: '#787878', team: 'Production' }, { h: 44, c: '#4A4A4A', team: 'Design' }, { h: 32, c: '#0A0A0A', team: 'Marketing' }] },
+        ];
+
+        const barsContainer = document.getElementById('stacked-bars-container');
+        stackedBarData.forEach(item => {
+            const col = document.createElement('div');
+            col.className = 'bar-group w-[22px] sm:w-[25px] h-full flex flex-col justify-between gap-[1.5px] cursor-pointer';
+            item.segments.forEach(seg => {
+                const segEl = document.createElement('div');
+                segEl.className = 'bar-segment w-full';
+                segEl.style.height = `${seg.h}%`;
+                segEl.style.backgroundColor = seg.c;
+                segEl.onmousemove = (e) => showTooltip(e, `${item.day} • ${seg.team}: ${Math.round(seg.h / 2)} tasks`);
+                segEl.onmouseleave = hideTooltip;
+                col.appendChild(segEl);
+            });
+            barsContainer.appendChild(col);
+        });
+
+        const heatmapPattern = [
+            [0, 0, 0, 0, 0, 0, 3],
+            [0, 0, 3, 3, 2, 0, 0],
+            [0, 0, 3, 2, 0, 3, 3],
+            [0, 3, 3, 2, 2, 2, 0]
+        ];
+        const shadeMap = ['#D4D4D4', '#8C8C8C', '#474747', '#0A0A0A'];
+        const daysLabel = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const heatmapGrid = document.getElementById('heatmap-grid');
+
+        heatmapPattern.forEach((row, rIdx) => {
+            row.forEach((val, cIdx) => {
+                const cell = document.createElement('div');
+                cell.className = 'heatmap-cell w-4 h-4 rounded-[2px] cursor-pointer';
+                cell.style.backgroundColor = shadeMap[val];
+                const hours = val === 0 ? '2 hrs' : val === 1 ? '4 hrs' : val === 2 ? '6 hrs' : '9 hrs';
+                cell.onmousemove = (e) => showTooltip(e, `Week ${rIdx + 1}, ${daysLabel[cIdx]}: ${hours}`);
+                cell.onmouseleave = hideTooltip;
+                heatmapGrid.appendChild(cell);
+            });
+        });
+
+        const companyBarSpecs = [
+            { h: 78, c: '#0A0A0A' }, { h: 48, c: '#737373' }, { h: 90, c: '#0A0A0A' },
+            { h: 72, c: '#737373' }, { h: 72, c: '#0A0A0A' }, { h: 52, c: '#737373' },
+            { h: 82, c: '#0A0A0A' }, { h: 48, c: '#737373' }, { h: 95, c: '#0A0A0A' },
+            { h: 66, c: '#737373' }, { h: 95, c: '#0A0A0A' }, { h: 48, c: '#737373' }
+        ];
+        const companyBarsContainer = document.getElementById('company-bars');
+        companyBarSpecs.forEach((bar, i) => {
+            const b = document.createElement('div');
+            b.className = 'mini-bar flex-1 rounded-[4px] cursor-pointer hover:opacity-75';
+            b.style.height = `${bar.h}%`;
+            b.style.backgroundColor = bar.c;
+            b.onmousemove = (e) => showTooltip(e, `Activity Batch #${i + 1}: ${bar.h * 2} events`);
+            b.onmouseleave = hideTooltip;
+            companyBarsContainer.appendChild(b);
+        });
+
+        // =========================================================================
+        // 2. SPA ROUTER & NAVIGATION CONTROLLER
+        // =========================================================================
+        function switchPage(pageId, navEl) {
+            // Hide all pages
+            document.querySelectorAll('.page-view').forEach(sec => sec.classList.add('hidden'));
+            // Show target page
+            const target = document.getElementById(`page-${pageId}`);
+            if (target) target.classList.remove('hidden');
+
+            // Update active state on sidebar
+            if (navEl) {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('bg-[#EFEFEF]', 'text-neutral-900');
+                    item.classList.add('text-textMuted');
+                });
+                navEl.classList.add('bg-[#EFEFEF]', 'text-neutral-900');
+                navEl.classList.remove('text-textMuted');
+            }
+
+            // Close mobile drawer if open
+            const sb = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (!sb.classList.contains('-translate-x-full') && window.innerWidth < 1024) {
+                sb.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+
+            lucide.createIcons();
+        }
+
+        function handleEmailNavClick(btnEl) {
+            const submenu = document.getElementById('email-submenu');
+            const chevron = document.getElementById('email-chevron');
+            submenu.classList.toggle('hidden');
+            chevron.classList.toggle('rotate-180');
+            switchPage('emails', btnEl);
+        }
+
+        // =========================================================================
+        // 3. STATE DATA & RENDERERS FOR EACH MENU PAGE
+        // =========================================================================
+
+        // --- NOTIFICATIONS DATA & LOGIC ---
+        let notificationsData = [
+            { id: 1, user: 'Sarah Jenkins', initials: 'SJ', text: 'mentioned you in Design Sprint Q4Figma file: "Can we review the monochrome contrast?"', time: '12 mins ago', category: 'mentions', unread: true },
+            { id: 2, user: 'Product Hunt Bot', initials: 'P', text: 'Milestone reached: Product Hunt campaign crossed 1,641 total transactions.', time: '1 hour ago', category: 'system', unread: true },
+            { id: 3, user: 'Alex Rivera', initials: 'AR', text: 'completed task "Prepare December Social Media Assets" ahead of schedule.', time: '3 hours ago', category: 'all', unread: true },
+            { id: 4, user: 'Billing System', initials: 'BS', text: 'Monthly expense allocation report ($44,171k) is ready for download.', time: 'Yesterday', category: 'system', unread: true },
+            { id: 5, user: 'Mina Kusuma', initials: 'MK', text: 'commented on Production Sprint #14: "Backend API endpoints deployed."', time: '2 days ago', category: 'mentions', unread: false }
+        ];
+        let currentNotifFilter = 'all';
+
+        function renderNotifications() {
+            const container = document.getElementById('notifications-list');
+            const filtered = notificationsData.filter(n => {
+                if (currentNotifFilter === 'unread') return n.unread;
+                if (currentNotifFilter === 'mentions') return n.category === 'mentions';
+                if (currentNotifFilter === 'system') return n.category === 'system';
+                return true;
+            });
+
+            const unreadCount = notificationsData.filter(n => n.unread).length;
+            const badge = document.getElementById('sidebar-notif-badge');
+            badge.textContent = unreadCount;
+            badge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="border border-borderLight rounded-xl p-8 text-center text-xs text-textMuted">No notifications in this filter.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(n => `
+                <div onclick="toggleNotificationRead(${n.id})" class="border border-borderLight rounded-xl p-4 bg-white hover:border-neutral-300 transition-colors flex items-start justify-between gap-4 cursor-pointer">
+                    <div class="flex items-start gap-3.5">
+                        <div class="w-9 h-9 rounded-full ${n.initials === 'P' ? 'bg-brandOrange text-white' : 'bg-neutral-900 text-white'} flex items-center justify-center text-xs font-semibold shrink-0">
+                            ${n.initials}
+                        </div>
+                        <div>
+                            <p class="text-xs text-neutral-900 leading-relaxed"><span class="font-semibold">${n.user}</span> ${n.text}</p>
+                            <p class="text-[11px] text-textMuted mt-1">${n.time}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        ${n.unread ? '<span class="w-2 h-2 rounded-full bg-neutral-900" title="Unread"></span>' : '<span class="text-[11px] text-textMuted">Read</span>'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterNotifications(filter, btn) {
+            currentNotifFilter = filter;
+            document.querySelectorAll('.notif-tab').forEach(t => {
+                t.className = 'notif-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-textMuted hover:bg-neutral-100';
+            });
+            btn.className = 'notif-tab px-3.5 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 text-white';
+            renderNotifications();
+        }
+
+        function toggleNotificationRead(id) {
+            const item = notificationsData.find(n => n.id === id);
+            if (item) {
+                item.unread = !item.unread;
+                renderNotifications();
+            }
+        }
+
+        function markAllNotificationsRead() {
+            notificationsData.forEach(n => n.unread = false);
+            renderNotifications();
+            showToast('All notifications marked as read');
+        }
+
+        // --- NOTES DATA & LOGIC ---
+        let notesData = [
+            { id: 1, title: 'Q4 Marketing Campaign Strategy', team: 'Marketing', date: 'Dec 5, 2024', pinned: true, content: 'Focus on Product Hunt launch momentum, influencer partnerships, and high-converting minimalist landing pages.' },
+            { id: 2, title: 'Design System Monochrome Tokens', team: 'Design', date: 'Dec 4, 2024', pinned: true, content: 'Primary Ink: #171717, Muted Text: #737373, Border Light: #EAEAEA, Surface Sidebar: #FAFAFA.' },
+            { id: 3, title: 'Production Release Checklist v2.4', team: 'Production', date: 'Dec 2, 2024', pinned: false, content: 'Verify zero-downtime database migration, run load tests up to 50k concurrent connections, and audit CSP headers.' },
+            { id: 4, title: 'Weekly Sync Meeting Minutes', team: 'Marketing', date: 'Nov 29, 2024', pinned: false, content: 'Reviewed $44,171k monthly expense allocation and approved new allocation for Design tooling.' }
+        ];
+
+        function renderNotes() {
+            const filter = document.getElementById('notes-tag-filter').value;
+            const grid = document.getElementById('notes-grid');
+            const list = notesData.filter(n => filter === 'All' || n.team === filter);
+
+            grid.innerHTML = list.map(n => `
+                <div class="border border-borderLight rounded-xl p-5 bg-white hover:border-neutral-300 transition-colors flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-neutral-100 text-neutral-800">${n.team}</span>
+                            <button onclick="deleteNote(${n.id})" class="text-neutral-400 hover:text-red-600 text-xs">Delete</button>
+                        </div>
+                        <h3 class="text-sm font-semibold text-neutral-900 mb-2">${n.title}</h3>
+                        <p class="text-xs text-textMuted leading-relaxed">${n.content}</p>
+                    </div>
+                    <div class="mt-5 pt-3 border-t border-borderLight flex items-center justify-between text-[11px] text-textMuted">
+                        <span>Edited ${n.date}</span>
+                        <span class="font-medium text-neutral-800">${n.pinned ? '📌 Pinned' : 'Note'}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openNewNoteModal() {
+            openModal('Create Workspace Note', `
+                <div>
+                    <label class="block font-medium mb-1">Note Title</label>
+                    <input id="modal-note-title" type="text" placeholder="e.g., Q1 Brand Guidelines" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Team Tag</label>
+                    <select id="modal-note-team" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                        <option value="Marketing">Marketing</option>
+                        <option value="Design">Design</option>
+                        <option value="Production">Production</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Content</label>
+                    <textarea id="modal-note-content" rows="3" placeholder="Write key takeaways..." class="w-full px-3 py-2 border border-borderLight rounded-lg"></textarea>
+                </div>
+                <button onclick="saveNewNote()" class="w-full py-2 rounded-lg bg-neutral-900 text-white font-medium hover:bg-neutral-800">Save Note</button>
+            `);
+        }
+
+        function saveNewNote() {
+            const title = document.getElementById('modal-note-title').value.trim();
+            const team = document.getElementById('modal-note-team').value;
+            const content = document.getElementById('modal-note-content').value.trim();
+            if (!title) return showToast('Please enter a note title');
+            notesData.unshift({ id: Date.now(), title, team, date: 'Just now', pinned: false, content: content || 'No description provided.' });
+            renderNotes();
+            closeModal();
+            showToast('New note added to workspace');
+        }
+
+        function deleteNote(id) {
+            notesData = notesData.filter(n => n.id !== id);
+            renderNotes();
+            showToast('Note removed');
+        }
+
+        // --- TASKS DATA & LOGIC ---
+        let tasksData = [
+            { id: 101, title: 'Product Hunt Launch Assets', team: 'Marketing', status: 'In Progress', priority: 'High', due: 'Dec 8', assignee: 'AR' },
+            { id: 102, title: 'Monochrome UI Kit Audit', team: 'Design', status: 'To Do', priority: 'Medium', due: 'Dec 10', assignee: 'SJ' },
+            { id: 103, title: 'Database Query Optimization', team: 'Production', status: 'Review', priority: 'High', due: 'Dec 7', assignee: 'MK' },
+            { id: 104, title: 'Q4 Expense Allocation Deck', team: 'Marketing', status: 'Completed', priority: 'Low', due: 'Dec 3', assignee: 'JD' },
+            { id: 105, title: 'Responsive Sidebar Drawer', team: 'Design', status: 'Completed', priority: 'Medium', due: 'Dec 2', assignee: 'JD' },
+            { id: 106, title: 'Webhook Retry Queue', team: 'Production', status: 'In Progress', priority: 'High', due: 'Dec 9', assignee: 'MK' }
+        ];
+        let currentTaskView = 'kanban';
+
+        function renderTasks() {
+            const teamFilter = document.getElementById('task-team-filter').value;
+            const filtered = tasksData.filter(t => teamFilter === 'All' || t.team === teamFilter);
+            const columns = ['To Do', 'In Progress', 'Review', 'Completed'];
+
+            const kanbanEl = document.getElementById('tasks-kanban-view');
+            kanbanEl.innerHTML = columns.map(col => {
+                const colTasks = filtered.filter(t => t.status === col);
+                return `
+                    <div class="border border-borderLight rounded-xl p-4 bg-sidebar">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-semibold text-neutral-900">${col}</span>
+                            <span class="px-2 py-0.5 text-[11px] rounded-full bg-white border border-borderLight font-medium">${colTasks.length}</span>
+                        </div>
+                        <div class="space-y-3">
+                            ${colTasks.map(t => `
+                                <div class="border border-borderLight rounded-lg p-3.5 bg-white shadow-2xs hover:border-neutral-400 transition-colors">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-neutral-100 text-neutral-800">${t.team}</span>
+                                        <span class="text-[10px] font-medium ${t.priority === 'High' ? 'text-badgeRedText' : 'text-textMuted'}">${t.priority}</span>
+                                    </div>
+                                    <p class="text-xs font-semibold text-neutral-900 mb-3">${t.title}</p>
+                                    <div class="flex items-center justify-between text-[11px] text-textMuted pt-2 border-t border-borderLight">
+                                        <span>Due ${t.due}</span>
+                                        <button onclick="advanceTaskStatus(${t.id})" class="text-neutral-900 font-medium hover:underline">Next →</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const listEl = document.getElementById('tasks-list-view');
+            listEl.innerHTML = `
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="border-b border-borderLight bg-sidebar text-textMuted">
+                            <th class="py-3 px-4">Task Name</th>
+                            <th class="py-3 px-4">Team</th>
+                            <th class="py-3 px-4">Status</th>
+                            <th class="py-3 px-4">Priority</th>
+                            <th class="py-3 px-4">Due Date</th>
+                            <th class="py-3 px-4 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-borderLight">
+                        ${filtered.map(t => `
+                            <tr>
+                                <td class="py-3 px-4 font-medium text-neutral-900">${t.title}</td>
+                                <td class="py-3 px-4">${t.team}</td>
+                                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-800">${t.status}</span></td>
+                                <td class="py-3 px-4">${t.priority}</td>
+                                <td class="py-3 px-4 text-textMuted">${t.due}</td>
+                                <td class="py-3 px-4 text-right"><button onclick="advanceTaskStatus(${t.id})" class="px-2.5 py-1 rounded border border-borderLight hover:bg-neutral-100">Advance</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function toggleTaskView(view) {
+            currentTaskView = view;
+            document.getElementById('tasks-kanban-view').classList.toggle('hidden', view !== 'kanban');
+            document.getElementById('tasks-list-view').classList.toggle('hidden', view !== 'list');
+            document.getElementById('btn-view-kanban').className = view === 'kanban' ? 'px-3 py-1 rounded-md text-xs font-medium bg-white shadow-sm text-neutral-900' : 'px-3 py-1 rounded-md text-xs font-medium text-textMuted hover:text-neutral-900';
+            document.getElementById('btn-view-list').className = view === 'list' ? 'px-3 py-1 rounded-md text-xs font-medium bg-white shadow-sm text-neutral-900' : 'px-3 py-1 rounded-md text-xs font-medium text-textMuted hover:text-neutral-900';
+        }
+
+        function advanceTaskStatus(id) {
+            const order = ['To Do', 'In Progress', 'Review', 'Completed'];
+            const task = tasksData.find(t => t.id === id);
+            if (task) {
+                const nextIdx = (order.indexOf(task.status) + 1) % order.length;
+                task.status = order[nextIdx];
+                renderTasks();
+                showToast(`Task moved to ${task.status}`);
+            }
+        }
+
+        function openNewTaskModal() {
+            openModal('Create New Task', `
+                <div>
+                    <label class="block font-medium mb-1">Task Title</label>
+                    <input id="modal-task-title" type="text" placeholder="e.g., Finalize Q4 Revenue Report" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium mb-1">Team</label>
+                        <select id="modal-task-team" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                            <option value="Marketing">Marketing</option>
+                            <option value="Design">Design</option>
+                            <option value="Production">Production</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Priority</label>
+                        <select id="modal-task-priority" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="saveNewTask()" class="w-full py-2 rounded-lg bg-neutral-900 text-white font-medium hover:bg-neutral-800">Create Task</button>
+            `);
+        }
+
+        function saveNewTask() {
+            const title = document.getElementById('modal-task-title').value.trim();
+            const team = document.getElementById('modal-task-team').value;
+            const priority = document.getElementById('modal-task-priority').value;
+            if (!title) return showToast('Task title is required');
+            tasksData.unshift({ id: Date.now(), title, team, status: 'To Do', priority, due: 'Dec 14', assignee: 'JD' });
+            renderTasks();
+            closeModal();
+            showToast('Task added to board');
+        }
+
+        // --- EMAILS DATA & LOGIC ---
+        let emailsData = [
+            { id: 1, folder: 'inbox', sender: 'Product Hunt Team', email: 'hello@producthunt.com', subject: 'Featured Maker: 1,641 Activities Milestone!', time: '10:24 AM', unread: true, starred: true, body: 'Hi Marketing Team,\n\nCongratulations! Your Product Hunt Web Design profile generated 1,641 total transactions and activities over the past 30 days. Let us know if you would like to schedule an AMA session with our community.' },
+            { id: 2, folder: 'inbox', sender: 'Sarah Jenkins', email: 'sarah.j@workspace.io', subject: 'Updated Monochrome Charts & SVG Gradients', time: 'Yesterday', unread: false, starred: false, body: 'Hey John,\n\nI just pushed the final SVG sparklines for Total Expenses ($8,414) and Total Revenue ($56,123k). All vertical dashed grid lines are aligned to pixel perfection.' },
+            { id: 3, folder: 'inbox', sender: 'Stripe Billing', email: 'receipts@stripe.com', subject: 'Invoice #4829-01 Paid ($8,414.00)', time: 'Dec 3', unread: false, starred: true, body: 'Your monthly operational & cloud infrastructure invoice of $8,414.00 has been processed automatically.' },
+            { id: 4, folder: 'sent', sender: 'You (John d.)', email: 'john.doe@workspace.io', subject: 'Re: Q4 Expenses Allocation Approval', time: 'Dec 2', unread: false, starred: false, body: 'Approved. Please allocate 77% ($31.0k) to Design and 58% ($23.2k) to Operational.' },
+            { id: 5, folder: 'drafts', sender: 'Draft to Board', email: 'board@workspace.io', subject: '[Draft] 2025 Annual Revenue Forecast', time: 'Dec 1', unread: true, starred: false, body: 'Based on our 12% YoY growth trajectory reaching $56,123k, our Q1 2025 target is...' }
+        ];
+        let currentEmailFolder = 'inbox';
+        let selectedEmailId = 1;
+
+        function filterEmailFolder(folder) {
+            currentEmailFolder = folder;
+            switchPage('emails', document.querySelector('[data-page=emails]'));
+            document.getElementById('email-folder-subtitle').textContent = `Folder: ${folder.charAt(0).toUpperCase() + folder.slice(1)} • Connected to team@workspace.io`;
+            document.querySelectorAll('.email-folder-btn').forEach(btn => {
+                const active = btn.dataset.folder === folder;
+                btn.className = active
+                    ? 'email-folder-btn px-3 py-1.5 rounded-lg border border-borderLight text-xs font-medium bg-neutral-900 text-white'
+                    : 'email-folder-btn px-3 py-1.5 rounded-lg border border-borderLight text-xs font-medium text-neutral-700 hover:bg-neutral-100';
+            });
+            const list = getFilteredEmails();
+            selectedEmailId = list.length ? list[0].id : null;
+            renderEmails();
+        }
+
+        function getFilteredEmails() {
+            if (currentEmailFolder === 'starred') return emailsData.filter(e => e.starred);
+            return emailsData.filter(e => e.folder === currentEmailFolder);
+        }
+
+        function renderEmails() {
+            const listPane = document.getElementById('email-list-pane');
+            const detailPane = document.getElementById('email-detail-pane');
+            const list = getFilteredEmails();
+
+            if (list.length === 0) {
+                listPane.innerHTML = `<div class="p-6 text-center text-xs text-textMuted">No messages in ${currentEmailFolder}.</div>`;
+                detailPane.innerHTML = `<div class="m-auto text-center text-xs text-textMuted">Select an email to read</div>`;
+                return;
+            }
+
+            listPane.innerHTML = list.map(e => `
+                <div onclick="selectEmail(${e.id})" class="p-4 cursor-pointer transition-colors ${e.id === selectedEmailId ? 'bg-[#F3F3F3]' : 'hover:bg-neutral-50'}">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs ${e.unread ? 'font-bold text-neutral-900' : 'font-medium text-neutral-700'}">${e.sender}</span>
+                        <span class="text-[11px] text-textMuted">${e.time}</span>
+                    </div>
+                    <p class="text-xs font-medium text-neutral-900 truncate">${e.subject}</p>
+                    <p class="text-[11px] text-textMuted truncate mt-0.5">${e.body}</p>
+                </div>
+            `).join('');
+
+            const activeEmail = emailsData.find(e => e.id === selectedEmailId) || list[0];
+            detailPane.innerHTML = `
+                <div>
+                    <div class="flex items-start justify-between border-b border-borderLight pb-4 mb-4">
+                        <div>
+                            <h3 class="text-base font-semibold text-neutral-900">${activeEmail.subject}</h3>
+                            <p class="text-xs text-textMuted mt-1">From: <span class="text-neutral-900 font-medium">${activeEmail.sender}</span> &lt;${activeEmail.email}&gt;</p>
+                        </div>
+                        <span class="text-xs text-textMuted">${activeEmail.time}</span>
+                    </div>
+                    <div class="text-xs text-neutral-800 leading-relaxed whitespace-pre-line">${activeEmail.body}</div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-borderLight">
+                    <textarea id="email-reply-box" rows="3" placeholder="Write a reply to ${activeEmail.sender}..." class="w-full p-3 text-xs border border-borderLight rounded-lg focus:outline-none focus:border-neutral-600"></textarea>
+                    <div class="flex justify-end mt-2">
+                        <button onclick="sendEmailReply()" class="px-4 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800">Send Reply</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectEmail(id) {
+            selectedEmailId = id;
+            const item = emailsData.find(e => e.id === id);
+            if (item) item.unread = false;
+            renderEmails();
+        }
+
+        function sendEmailReply() {
+            const box = document.getElementById('email-reply-box');
+            if (!box || !box.value.trim()) return showToast('Please write a message before sending');
+            box.value = '';
+            showToast('Reply sent successfully');
+        }
+
+        function openComposeEmailModal() {
+            openModal('Compose New Email', `
+                <div>
+                    <label class="block font-medium mb-1">To</label>
+                    <input id="modal-email-to" type="email" placeholder="client@company.com" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Subject</label>
+                    <input id="modal-email-subject" type="text" placeholder="Project status update" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Message</label>
+                    <textarea id="modal-email-body" rows="4" class="w-full px-3 py-2 border border-borderLight rounded-lg"></textarea>
+                </div>
+                <button onclick="sendComposedEmail()" class="w-full py-2 rounded-lg bg-neutral-900 text-white font-medium hover:bg-neutral-800">Send Email</button>
+            `);
+        }
+
+        function sendComposedEmail() {
+            const to = document.getElementById('modal-email-to').value.trim();
+            const subject = document.getElementById('modal-email-subject').value.trim();
+            const body = document.getElementById('modal-email-body').value.trim();
+            if (!to || !subject) return showToast('Recipient and subject required');
+            emailsData.unshift({ id: Date.now(), folder: 'sent', sender: `To: ${to}`, email: to, subject, time: 'Just now', unread: false, starred: false, body: body || '(No content)' });
+            closeModal();
+            filterEmailFolder('sent');
+            showToast('Email sent');
+        }
+
+        // --- CALENDARS DATA & LOGIC ---
+        let calendarEvents = [
+            { day: 2, title: 'Marketing Sprint', team: 'Marketing' },
+            { day: 5, title: 'Design Review', team: 'Design' },
+            { day: 7, title: 'Product Hunt Launch', team: 'Marketing' },
+            { day: 12, title: 'Database Migration', team: 'Production' },
+            { day: 18, title: 'Q4 Budget Audit', team: 'Marketing' },
+            { day: 24, title: 'Year-End Freeze', team: 'Production' }
+        ];
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-days-grid');
+            let cellsHTML = '';
+            for (let d = 1; d <= 31; d++) {
+                const dayEvents = calendarEvents.filter(ev => ev.day === d);
+                cellsHTML += `
+                    <div class="min-h-[92px] p-2 bg-white hover:bg-neutral-50 transition-colors">
+                        <div class="text-xs font-medium ${d === 7 ? 'w-6 h-6 rounded-full bg-neutral-900 text-white flex items-center justify-center' : 'text-neutral-700'}">${d}</div>
+                        <div class="mt-1.5 space-y-1">
+                            ${dayEvents.map(ev => `
+                                <div class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-neutral-900 text-white truncate">${ev.title}</div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            // Fill remaining 4 cells for 35-grid
+            for (let i = 1; i <= 4; i++) {
+                cellsHTML += `<div class="min-h-[92px] p-2 bg-sidebar text-neutral-400 text-xs">${i} Jan</div>`;
+            }
+            grid.innerHTML = cellsHTML;
+
+            const upcomingEl = document.getElementById('upcoming-events-list');
+            upcomingEl.innerHTML = calendarEvents.map(ev => `
+                <div class="flex items-center justify-between border-b border-borderLight pb-2.5 last:border-none">
+                    <div>
+                        <p class="text-xs font-semibold text-neutral-900">${ev.title}</p>
+                        <p class="text-[11px] text-textMuted">${ev.team} Team</p>
+                    </div>
+                    <span class="px-2 py-1 rounded bg-neutral-100 text-[11px] font-medium text-neutral-800">Dec ${ev.day}</span>
+                </div>
+            `).join('');
+        }
+
+        function openNewEventModal() {
+            openModal('Schedule Calendar Event', `
+                <div>
+                    <label class="block font-medium mb-1">Event Title</label>
+                    <input id="modal-event-title" type="text" placeholder="e.g., Stakeholder Demo" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium mb-1">Day in December (1-31)</label>
+                        <input id="modal-event-day" type="number" min="1" max="31" value="15" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Team</label>
+                        <select id="modal-event-team" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                            <option value="Marketing">Marketing</option>
+                            <option value="Design">Design</option>
+                            <option value="Production">Production</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="saveNewEvent()" class="w-full py-2 rounded-lg bg-neutral-900 text-white font-medium hover:bg-neutral-800">Add to Calendar</button>
+            `);
+        }
+
+        function saveNewEvent() {
+            const title = document.getElementById('modal-event-title').value.trim();
+            const day = parseInt(document.getElementById('modal-event-day').value, 10) || 15;
+            const team = document.getElementById('modal-event-team').value;
+            if (!title) return showToast('Please enter an event title');
+            calendarEvents.push({ day: Math.min(31, Math.max(1, day)), title, team });
+            renderCalendar();
+            closeModal();
+            showToast(`Scheduled "${title}" on Dec ${day}`);
+        }
+
+        // --- CONTACTS DATA & LOGIC ---
+        let contactsData = [
+            { id: 1, name: 'Ryan Hoover', email: 'ryan@producthunt.com', role: 'Founder & Advisor', company: 'Product Hunt', status: 'Active', last: '2 hours ago' },
+            { id: 2, name: 'Claire Hughes', email: 'claire@stripe.com', role: 'VP of Operations', company: 'Stripe', status: 'Active', last: 'Yesterday' },
+            { id: 3, name: 'Karri Saarinen', email: 'karri@linear.app', role: 'Head of Design', company: 'Linear', status: 'Lead', last: 'Dec 4' },
+            { id: 4, name: 'Guillermo Rauch', email: 'rauchg@vercel.com', role: 'CEO', company: 'Vercel', status: 'Active', last: 'Dec 1' },
+            { id: 5, name: 'Ivan Zhao', email: 'ivan@makenotion.com', role: 'Product Strategy', company: 'Notion', status: 'Offline', last: 'Nov 28' }
+        ];
+
+        function renderContacts() {
+            const q = (document.getElementById('contact-search')?.value || '').toLowerCase();
+            const tbody = document.getElementById('contacts-table-body');
+            const filtered = contactsData.filter(c => c.name.toLowerCase().includes(q) || c.company.toLowerCase().includes(q));
+
+            tbody.innerHTML = filtered.map(c => `
+                <tr class="hover:bg-neutral-50">
+                    <td class="py-3 px-4">
+                        <p class="font-semibold text-neutral-900">${c.name}</p>
+                        <p class="text-[11px] text-textMuted">${c.email}</p>
+                    </td>
+                    <td class="py-3 px-4 text-neutral-800">${c.role}</td>
+                    <td class="py-3 px-4"><span class="px-2.5 py-0.5 rounded-md bg-neutral-100 font-medium text-neutral-900">${c.company}</span></td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded-full text-[11px] font-medium ${c.status === 'Active' ? 'bg-badgeGreenBg text-badgeGreenText' : 'bg-neutral-100 text-neutral-700'}">${c.status}</span>
+                    </td>
+                    <td class="py-3 px-4 text-textMuted">${c.last}</td>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick="showToast('Opening email thread with ${c.name}')" class="px-2.5 py-1 rounded border border-borderLight hover:bg-neutral-900 hover:text-white transition-colors">Message</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openNewContactModal() {
+            openModal('Add New CRM Contact', `
+                <div>
+                    <label class="block font-medium mb-1">Full Name</label>
+                    <input id="modal-contact-name" type="text" placeholder="e.g., Dylan Field" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Email</label>
+                    <input id="modal-contact-email" type="email" placeholder="dylan@figma.com" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium mb-1">Role</label>
+                        <input id="modal-contact-role" type="text" placeholder="Design Partner" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Company</label>
+                        <input id="modal-contact-company" type="text" placeholder="Figma" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                    </div>
+                </div>
+                <button onclick="saveNewContact()" class="w-full py-2 rounded-lg bg-neutral-900 text-white font-medium hover:bg-neutral-800">Save Contact</button>
+            `);
+        }
+
+        function saveNewContact() {
+            const name = document.getElementById('modal-contact-name').value.trim();
+            const email = document.getElementById('modal-contact-email').value.trim();
+            const role = document.getElementById('modal-contact-role').value.trim() || 'Partner';
+            const company = document.getElementById('modal-contact-company').value.trim() || 'Enterprise';
+            if (!name) return showToast('Contact name is required');
+            contactsData.unshift({ id: Date.now(), name, email: email || 'contact@company.io', role, company, status: 'Active', last: 'Just now' });
+            renderContacts();
+            closeModal();
+            showToast(`Added ${name} to Contacts`);
+        }
+
+        // --- COMPANIES DATA & LOGIC ---
+        let companiesData = [
+            { name: 'Product Hunt', initial: 'P', color: '#DF5835', category: 'Web Design & Launchpad', activities: '1,641', revenue: '$18,400', growth: '+24%' },
+            { name: 'Stripe', initial: 'S', color: '#171717', category: 'Payment Infrastructure', activities: '1,120', revenue: '$14,200', growth: '+12%' },
+            { name: 'Linear', initial: 'L', color: '#4A4A4A', category: 'Issue Tracking & Sprints', activities: '890', revenue: '$9,850', growth: '+19%' },
+            { name: 'Vercel', initial: 'V', color: '#0A0A0A', category: 'Edge Cloud Deployment', activities: '740', revenue: '$7,300', growth: '+8%' },
+            { name: 'Notion', initial: 'N', color: '#262626', category: 'Workspace Docs', activities: '615', revenue: '$6,373', growth: '+15%' },
+            { name: 'Figma', initial: 'F', color: '#525252', category: 'Collaborative UI Design', activities: '530', revenue: '$5,100', growth: '+11%' }
+        ];
+
+        function renderCompanies() {
+            const grid = document.getElementById('companies-grid');
+            grid.innerHTML = companiesData.map(c => `
+                <div class="border border-borderLight rounded-xl p-5 bg-white hover:border-neutral-300 transition-colors flex flex-col justify-between">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-base" style="background-color:${c.color}">${c.initial}</div>
+                            <div>
+                                <h3 class="text-sm font-semibold text-neutral-900">${c.name}</h3>
+                                <p class="text-[11px] text-textMuted">${c.category}</p>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-badgeGreenBg text-badgeGreenText">${c.growth}</span>
+                    </div>
+                    <div class="my-5 pt-4 border-t border-borderLight grid grid-cols-2 gap-2">
+                        <div>
+                            <p class="text-[11px] text-textMuted">Monthly Activities</p>
+                            <p class="text-lg font-semibold text-neutral-900">${c.activities}</p>
+                        </div>
+                        <div>
+                            <p class="text-[11px] text-textMuted">Retainer Value</p>
+                            <p class="text-lg font-semibold text-neutral-900">${c.revenue}</p>
+                        </div>
+                    </div>
+                    <button onclick="showToast('Viewing ${c.name} activity ledger')" class="w-full py-1.5 rounded-lg border border-borderLight text-xs font-medium text-neutral-800 hover:bg-neutral-900 hover:text-white transition-colors">View Account Ledger</button>
+                </div>
+            `).join('');
+        }
+
+        function openNewCompanyModal() {
+            openModal('Add Partner Company', `
+                <div>
+                    <label class="block font-medium mb-1">Company Name</label>
+                    <input id="modal-comp-name" type="text" placeholder="e.g., Raycast" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Industry / Category</label>
+                    <input id="modal-comp-cat" type="text" placeholder="Productivity Tools" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Monthly Retainer ($)</label>
+                    <input id="modal-comp-rev" type="text" placeholder="$8,500" class="w-full px-3 py-2 border border-borderLight rounded-lg">
+                </div>
+                <button onclick="saveNewCompany()" class="w-full py-2 rounded-lg bg-neutral-900 text-white font-medium hover:bg-neutral-800">Add Company</button>
+            `);
+        }
+
+        function saveNewCompany() {
+            const name = document.getElementById('modal-comp-name').value.trim();
+            const category = document.getElementById('modal-comp-cat').value.trim() || 'SaaS Partner';
+            const revenue = document.getElementById('modal-comp-rev').value.trim() || '$5,000';
+            if (!name) return showToast('Company name is required');
+            companiesData.unshift({ name, initial: name.charAt(0).toUpperCase(), color: '#171717', category, activities: '320', revenue, growth: '+10%' });
+            renderCompanies();
+            closeModal();
+            showToast(`${name} added to portfolio`);
+        }
+
+        // --- INTEGRATIONS DATA & LOGIC ---
+        let integrationsData = [
+            { id: 'slack', name: 'Slack', desc: 'Real-time channel alerts for task completions and mentions.', connected: true },
+            { id: 'github', name: 'GitHub', desc: 'Link pull requests and commits to Production team tasks.', connected: true },
+            { id: 'figma', name: 'Figma', desc: 'Embed live design canvases inside Workspace Notes.', connected: true },
+            { id: 'stripe', name: 'Stripe', desc: 'Sync Total Revenue ($56,123k) and expense feeds automatically.', connected: true },
+            { id: 'notion', name: 'Notion', desc: 'Two-way sync for documentation and wiki databases.', connected: false },
+            { id: 'linear', name: 'Linear', desc: 'Mirror sprint cycles and bug reports with Tasks.', connected: false }
+        ];
+        let currentIntegFilter = 'all';
+
+        function renderIntegrations() {
+            const grid = document.getElementById('integrations-grid');
+            const list = integrationsData.filter(app => currentIntegFilter === 'all' || app.connected);
+
+            grid.innerHTML = list.map(app => `
+                <div class="border border-borderLight rounded-xl p-5 bg-white flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="w-9 h-9 rounded-lg bg-neutral-900 text-white flex items-center justify-center font-bold text-xs">${app.name.slice(0,2).toUpperCase()}</div>
+                            <span class="px-2 py-0.5 rounded-full text-[11px] font-medium ${app.connected ? 'bg-badgeGreenBg text-badgeGreenText' : 'bg-neutral-100 text-textMuted'}">
+                                ${app.connected ? 'Connected' : 'Disconnected'}
+                            </span>
+                        </div>
+                        <h3 class="text-sm font-semibold text-neutral-900 mb-1">${app.name}</h3>
+                        <p class="text-xs text-textMuted leading-relaxed">${app.desc}</p>
+                    </div>
+                    <div class="mt-5 pt-3 border-t border-borderLight flex items-center justify-between">
+                        <span class="text-[11px] text-textMuted">OAuth 2.0 Webhook</span>
+                        <button onclick="toggleIntegration('${app.id}')" class="px-3 py-1 rounded-lg text-xs font-medium border ${app.connected ? 'border-borderLight text-neutral-700 hover:bg-neutral-100' : 'border-neutral-900 bg-neutral-900 text-white hover:bg-neutral-800'} transition-colors">
+                            ${app.connected ? 'Disconnect' : 'Connect'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleIntegration(id) {
+            const app = integrationsData.find(a => a.id === id);
+            if (app) {
+                app.connected = !app.connected;
+                renderIntegrations();
+                showToast(`${app.name} ${app.connected ? 'connected to workspace' : 'disconnected'}`);
+            }
+        }
+
+        function filterIntegrations(filter, btn) {
+            currentIntegFilter = filter;
+            document.querySelectorAll('.integ-tab').forEach(b => b.className = 'integ-tab px-3 py-1.5 rounded-lg text-xs font-medium text-textMuted hover:bg-neutral-100');
+            btn.className = 'integ-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-900 text-white';
+            renderIntegrations();
+        }
+
+        // --- SETTINGS LOGIC ---
+        function switchSettingsTab(tabId, btn) {
+            document.querySelectorAll('.settings-panel').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`settings-panel-${tabId}`).classList.remove('hidden');
+            document.querySelectorAll('.settings-tab').forEach(b => {
+                b.className = 'settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-textMuted hover:text-neutral-900';
+            });
+            btn.className = 'settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-white shadow-sm text-neutral-900';
+        }
+
+        function saveProfileSettings() {
+            const newName = document.getElementById('setting-name-input').value.trim() || 'John d.';
+            document.getElementById('header-username').textContent = newName;
+            showToast('Profile settings saved');
+        }
+
+        function saveWorkspaceSettings() {
+            const wsName = document.getElementById('setting-workspace-input').value.trim() || "Marketing Team's";
+            document.getElementById('team-name').textContent = wsName;
+            document.getElementById('team-avatar').textContent = wsName.charAt(0).toUpperCase();
+            showToast('Workspace configuration updated');
+        }
+
+        // =========================================================================
+        // 4. SHARED UI HELPERS (TOOLTIP, MODAL, TOAST, WORKSPACE SWITCHER)
+        // =========================================================================
+        const tooltip = document.getElementById('custom-tooltip');
+        const tooltipText = document.getElementById('tooltip-text');
+
+        function showTooltip(e, text) {
+            tooltipText.textContent = text;
+            tooltip.style.opacity = '1';
+            tooltip.style.left = `${e.clientX + 12}px`;
+            tooltip.style.top = `${e.clientY - 28}px`;
+        }
+
+        function hideTooltip() {
+            tooltip.style.opacity = '0';
+        }
+
+        function openModal(title, bodyHTML) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-body').innerHTML = bodyHTML;
+            const modal = document.getElementById('universal-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('universal-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function toggleDropdown(id) {
+            document.getElementById(id).classList.toggle('hidden');
+        }
+
+        function toggleMobileSidebar() {
+            const sb = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sb.classList.toggle('-translate-x-full');
+            backdrop.classList.toggle('hidden');
+        }
+
+        function toggleSidebarCollapse() {
+            showToast('Sidebar layout locked in standard view');
+        }
+
+        const workspaceTeams = [
+            { name: "Marketing Team's", initial: 'M' },
+            { name: "Design Team's", initial: 'D' },
+            { name: "Production Team's", initial: 'P' }
+        ];
+        let wsIdx = 0;
+        function cycleWorkspaceTeam() {
+            wsIdx = (wsIdx + 1) % workspaceTeams.length;
+            document.getElementById('team-name').textContent = workspaceTeams[wsIdx].name;
+            document.getElementById('team-avatar').textContent = workspaceTeams[wsIdx].initial;
+            showToast(`Switched to ${workspaceTeams[wsIdx].name}`);
+        }
+
+        function handleGlobalSearch(val) {
+            const q = val.trim().toLowerCase();
+            if (!q) return;
+            const pages = ['dashboard', 'notifications', 'notes', 'tasks', 'emails', 'calendars', 'analytics', 'contacts', 'companies', 'integrations', 'settings'];
+            const match = pages.find(p => p === q);
+            if (match) {
+                switchPage(match, document.querySelector(`[data-page=${match}]`));
+                showToast(`Jumped to ${match.charAt(0).toUpperCase() + match.slice(1)}`);
+            }
+        }
+
+        const timeframes = ['Week', 'Month', 'Year'];
+        function cycleTimeframe(btn, targetId, values) {
+            const span = btn.querySelector('span');
+            const currentIdx = timeframes.indexOf(span.textContent.trim());
+            const nextIdx = (currentIdx + 1) % timeframes.length;
+            span.textContent = timeframes[nextIdx];
+            if (targetId && values) {
+                document.getElementById(targetId).textContent = values[nextIdx];
+            }
+        }
+
+        const dateRanges = [
+            'Sun, 1 Dec - Sat, 7 Dec',
+            'Sun, 8 Dec - Sat, 14 Dec',
+            'Sun, 15 Dec - Sat, 21 Dec'
+        ];
+        function cycleDateRange(btn) {
+            const span = btn.querySelector('span');
+            const idx = dateRanges.indexOf(span.textContent.trim());
+            span.textContent = dateRanges[(idx + 1) % dateRanges.length];
+        }
+
+        let toastTimeout;
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = msg;
+            toast.classList.remove('translate-y-16', 'opacity-0');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('translate-y-16', 'opacity-0');
+            }, 2400);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                document.getElementById('global-search').focus();
+            }
+            if (e.key === 'Escape') closeModal();
+        });
+
+        window.addEventListener('click', (e) => {
+            const menu = document.getElementById('profile-menu');
+            if (!e.target.closest('#profile-menu') && !e.target.closest('button[onclick*="profile-menu"]')) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Initial Render of All Views
+        renderNotifications();
+        renderNotes();
+        renderTasks();
+        renderEmails();
+        renderCalendar();
+        renderContacts();
+        renderCompanies();
+        renderIntegrations();
+        lucide.createIcons();
+    </script>
+</body>
+</html>

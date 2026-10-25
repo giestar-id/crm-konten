@@ -1,0 +1,1198 @@
+"use client";
+
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabase";
+import {
+  ActivePage,
+  Workspace,
+  SocialAccount,
+  ContentItem,
+  PostJob,
+  PostTarget,
+  MediaAsset,
+  IdeaItem,
+  ContactItem,
+  NotificationItem,
+  Platform,
+  ContentStage,
+  ContentPillar,
+  PriorityLevel,
+} from "@/types";
+
+interface PublishProgressState {
+  isOpen: boolean;
+  jobTitle: string;
+  idempotencyKey: string;
+  targets: PostTarget[];
+  overallProgress: number;
+  overallStatus: string;
+  isComplete: boolean;
+}
+
+interface AppContextType {
+  activePage: ActivePage;
+  setActivePage: (page: ActivePage) => void;
+
+  // Search
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+
+  // Workspaces
+  workspaces: Workspace[];
+  activeWorkspace: Workspace;
+  setActiveWorkspace: (ws: Workspace) => void;
+  addWorkspace: (name: string, description: string) => Promise<void>;
+
+  // Social Accounts
+  socialAccounts: SocialAccount[];
+  toggleAccountStatus: (id: string) => Promise<void>;
+  reconnectAccount: (id: string) => Promise<void>;
+
+  // Pipeline Content Items
+  contentItems: ContentItem[];
+  addContentItem: (item: Omit<ContentItem, "id" | "workspaceId" | "createdAt">) => Promise<void>;
+  updateContentStage: (id: string, stage: ContentStage) => Promise<void>;
+  deleteContentItem: (id: string) => Promise<void>;
+  toggleChecklist: (contentId: string, checklistId: string) => Promise<void>;
+
+  // Media Assets
+  mediaAssets: MediaAsset[];
+  addMediaAsset: (asset: Omit<MediaAsset, "id" | "workspaceId" | "uploadedAt">) => Promise<void>;
+
+  // Ideas Bank
+  ideas: IdeaItem[];
+  addIdea: (idea: Omit<IdeaItem, "id" | "workspaceId" | "createdAt">) => Promise<void>;
+  convertIdeaToPipeline: (ideaId: string) => Promise<void>;
+  deleteIdea: (ideaId: string) => Promise<void>;
+
+  // Contacts
+  contacts: ContactItem[];
+  addContact: (contact: Omit<ContactItem, "id" | "workspaceId">) => Promise<void>;
+
+  // Notifications
+  notifications: NotificationItem[];
+  unreadNotifCount: number;
+  markAllNotificationsAsRead: () => Promise<void>;
+  addNotification: (title: string, message: string, type: NotificationItem["type"]) => Promise<void>;
+
+  // 1-Click Publishing Engine
+  publishProgress: PublishProgressState;
+  startPublishProcess: (
+    title: string,
+    caption: string,
+    platforms: Platform[],
+    mediaName: string,
+    overrides?: Record<Platform, any>
+  ) => void;
+  retryPlatformPublish: (platform: Platform) => void;
+  closePublishModal: () => void;
+
+  // Global Toast
+  toastMessage: string | null;
+  showToast: (msg: string) => void;
+
+  // Pre-fill Composer
+  composerPrefill: {
+    title?: string;
+    caption?: string;
+    mediaName?: string;
+  } | null;
+  setComposerPrefill: (data: { title?: string; caption?: string; mediaName?: string } | null) => void;
+
+  // Supabase sync status
+  isSupabaseLive: boolean;
+  refreshFromSupabase: () => Promise<void>;
+}
+
+// Fallback initial data in case Supabase is waiting for SQL grants
+const defaultWorkspaces: Workspace[] = [
+  {
+    id: "ws-1",
+    name: "Tech Pulse Studio",
+    description: "Main personal brand for AI, SaaS & Tech Reviews",
+    color: "#0A0A0A",
+    initials: "TP",
+    connectedAccountsCount: 4,
+    contentCount: 18,
+    nextScheduledPost: "Hari ini, 19:00 WIB",
+    role: "Owner",
+    createdAt: "2026-01-15",
+  },
+  {
+    id: "ws-2",
+    name: "Aji Creative Hub",
+    description: "Client projects, design systems & developer tutorials",
+    color: "#DF5835",
+    initials: "AC",
+    connectedAccountsCount: 6,
+    contentCount: 34,
+    role: "Owner",
+    createdAt: "2026-02-01",
+  },
+  {
+    id: "ws-3",
+    name: "Developer Bites",
+    description: "Short coding tips, JavaScript & Next.js micro-lessons",
+    color: "#4A4A4A",
+    initials: "DB",
+    connectedAccountsCount: 2,
+    contentCount: 12,
+    role: "Editor",
+    createdAt: "2026-02-20",
+  },
+];
+
+const defaultAccounts: SocialAccount[] = [
+  {
+    id: "acc-yt-1",
+    workspaceId: "ws-1",
+    platform: "youtube",
+    displayName: "Tech Pulse Studio",
+    handle: "@TechPulseOfficial",
+    avatarUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=60",
+    accountType: "YouTube Channel (Verified)",
+    status: "active",
+    apiQuotaUsed: 1600,
+    apiQuotaMax: 10000,
+    tokenExpiresIn: "28 hari",
+    scopes: ["youtube.upload", "youtube.readonly"],
+  },
+  {
+    id: "acc-ig-1",
+    workspaceId: "ws-1",
+    platform: "instagram",
+    displayName: "Tech Pulse Indonesia",
+    handle: "@techpulse.id",
+    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60",
+    accountType: "Instagram Business Creator",
+    status: "active",
+    tokenExpiresIn: "54 hari",
+    scopes: ["instagram_content_publish", "instagram_basic"],
+  },
+  {
+    id: "acc-tt-1",
+    workspaceId: "ws-1",
+    platform: "tiktok",
+    displayName: "Tech Pulse Official",
+    handle: "@techpulse_official",
+    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60",
+    accountType: "TikTok Direct Post API",
+    status: "active",
+    tokenExpiresIn: "19 hari",
+    scopes: ["video.upload", "video.publish"],
+  },
+  {
+    id: "acc-fb-1",
+    workspaceId: "ws-1",
+    platform: "facebook",
+    displayName: "Tech Pulse Official Page",
+    handle: "Tech Pulse Page",
+    avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=60",
+    accountType: "Facebook Page (Verified)",
+    status: "active",
+    tokenExpiresIn: "45 hari",
+    scopes: ["pages_manage_posts"],
+  },
+];
+
+const defaultContent: ContentItem[] = [
+  {
+    id: "c-1",
+    workspaceId: "ws-1",
+    title: "DeepSeek vs Claude 3.7: Perbandingan Coding Benchmark Nyata",
+    stage: "ide",
+    pillar: "Tech Reviews",
+    priority: "high",
+    deadline: "2026-11-02",
+    notes: "Fokus pada efisiensi token, kecepatan penulisan regex, dan akurasi Next.js App Router.",
+    checklist: [
+      { id: "ck-1", text: "Kumpulkan 3 kasus uji benchmark coding", done: true },
+      { id: "ck-2", text: "Screen recording stopwatch", done: false },
+    ],
+    tags: ["#AI", "#Coding", "#NextJS"],
+    targetPlatforms: ["youtube", "instagram", "tiktok", "facebook"],
+    createdAt: "2026-10-20",
+  },
+  {
+    id: "c-2",
+    workspaceId: "ws-1",
+    title: "Framework Desain UI Monokrom: Mengapa Brand Mewah Memakainya?",
+    stage: "naskah",
+    pillar: "Personal Brand",
+    priority: "medium",
+    deadline: "2026-10-29",
+    script: "Hook: Perhatikan Apple, Linear, dan Vercel.",
+    checklist: [
+      { id: "ck-3", text: "Riset Apple vs kompetitor", done: true },
+      { id: "ck-4", text: "Finalisasi naskah 60 detik", done: true },
+    ],
+    tags: ["#DesignSystem", "#Minimalism"],
+    targetPlatforms: ["youtube", "instagram", "tiktok"],
+    createdAt: "2026-10-21",
+  },
+  {
+    id: "c-3",
+    workspaceId: "ws-1",
+    title: "5 Setup Desk Minimalis Solo Creator 2026",
+    stage: "produksi",
+    pillar: "Personal Brand",
+    priority: "high",
+    deadline: "2026-10-28",
+    checklist: [
+      { id: "ck-5", text: "Take video b-roll lighting malam hari", done: true },
+      { id: "ck-6", text: "Audio voiceover Shure SM7B", done: true },
+    ],
+    tags: ["#DeskSetup", "#Workspace"],
+    targetPlatforms: ["youtube", "instagram", "tiktok", "facebook"],
+    createdAt: "2026-10-22",
+  },
+  {
+    id: "c-4",
+    workspaceId: "ws-1",
+    title: "Next.js 16 Server Actions & Parallel Queue Masterclass",
+    stage: "editing",
+    pillar: "Tutorials",
+    priority: "high",
+    deadline: "2026-10-26",
+    checklist: [
+      { id: "ck-7", text: "Cut dead air & filler words", done: true },
+      { id: "ck-8", text: "Animasi pop-up code syntax highlight", done: true },
+    ],
+    tags: ["#NextJS", "#Fullstack"],
+    targetPlatforms: ["youtube", "facebook"],
+    createdAt: "2026-10-23",
+  },
+  {
+    id: "c-5",
+    workspaceId: "ws-1",
+    title: "5 AI Tools That Save 20 Hours/Week (Solo Creator Edition)",
+    stage: "siap_posting",
+    pillar: "Tech Reviews",
+    priority: "high",
+    deadline: "2026-10-25",
+    notes: "File video final ai_tools_2026.mp4 terlampir. Siap 1-click publish.",
+    checklist: [
+      { id: "ck-9", text: "Render format MP4 1080x1920", done: true },
+      { id: "ck-10", text: "Validasi audio tidak copyright", done: true },
+    ],
+    tags: ["#AITools", "#Productivity"],
+    mediaAssetId: "m-1",
+    mediaName: "ai_tools_2026.mp4",
+    targetPlatforms: ["youtube", "instagram", "tiktok", "facebook"],
+    createdAt: "2026-10-24",
+  },
+  {
+    id: "c-6",
+    workspaceId: "ws-1",
+    title: "Review Keyboard Low-Profile Logitech MX Mechanical Mini",
+    stage: "terjadwal",
+    pillar: "Sponsorships",
+    priority: "high",
+    deadline: "2026-10-25",
+    scheduledAt: "2026-10-25T19:00:00+07:00",
+    checklist: [{ id: "ck-11", text: "Approval brand manager", done: true }],
+    tags: ["#Logitech", "#MechanicalKeyboard"],
+    targetPlatforms: ["youtube", "instagram", "tiktok", "facebook"],
+    createdAt: "2026-10-24",
+  },
+  {
+    id: "c-7",
+    workspaceId: "ws-1",
+    title: "Tips Menghubungkan 4 Platform Sekaligus dengan 1-Click Publishing",
+    stage: "terbit",
+    pillar: "Tutorials",
+    priority: "medium",
+    deadline: "2026-10-24",
+    viewsCount: 124500,
+    likesCount: 8920,
+    checklist: [],
+    tags: ["#Automation", "#SocialMedia"],
+    targetPlatforms: ["youtube", "instagram", "tiktok", "facebook"],
+    publishedUrl: "https://youtube.com/shorts/sph_demo_849",
+    createdAt: "2026-10-23",
+  },
+  {
+    id: "c-8",
+    workspaceId: "ws-1",
+    title: "Cara Mengotomasi Workflow Konten CRM Tanpa Buka 4 Tab Berbeda",
+    stage: "dianalisis",
+    pillar: "Tech Reviews",
+    priority: "high",
+    deadline: "2026-10-22",
+    viewsCount: 248600,
+    likesCount: 19400,
+    checklist: [],
+    tags: ["#ContentCRM", "#Productivity"],
+    targetPlatforms: ["youtube", "instagram", "tiktok", "facebook"],
+    publishedUrl: "https://youtube.com/shorts/sph_case_study_99",
+    createdAt: "2026-10-21",
+  },
+];
+
+const defaultMedia: MediaAsset[] = [
+  {
+    id: "m-1",
+    workspaceId: "ws-1",
+    name: "ai_tools_2026.mp4",
+    duration: "0:54",
+    aspectRatio: "9:16",
+    size: "48.2 MB",
+    resolution: "1080 x 1920 (FHD)",
+    thumbnailUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&auto=format&fit=crop&q=60",
+    uploadedAt: "2026-10-24 14:20",
+    tags: ["Vertical", "Shorts", "Reels"],
+  },
+  {
+    id: "m-2",
+    workspaceId: "ws-1",
+    name: "logitech_mx_review.mp4",
+    duration: "1:12",
+    aspectRatio: "9:16",
+    size: "64.5 MB",
+    resolution: "1080 x 1920 (FHD)",
+    thumbnailUrl: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&auto=format&fit=crop&q=60",
+    uploadedAt: "2026-10-23 18:05",
+    tags: ["Sponsorship", "Hardware"],
+  },
+  {
+    id: "m-3",
+    workspaceId: "ws-1",
+    name: "monochrome_ui_guide.mp4",
+    duration: "14:20",
+    aspectRatio: "16:9",
+    size: "420.0 MB",
+    resolution: "3840 x 2160 (4K UHD)",
+    thumbnailUrl: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=400&auto=format&fit=crop&q=60",
+    uploadedAt: "2026-10-22 11:30",
+    tags: ["Longform", "YouTube Masterclass"],
+  },
+];
+
+const defaultIdeas: IdeaItem[] = [
+  {
+    id: "idea-1",
+    workspaceId: "ws-1",
+    title: "A/B Testing Thumbnail Monokrom vs Vibrant Colors di YouTube Shorts",
+    niche: "Creative Strategy",
+    notes: "Uji coba 2 akun identik: satu monokrom editorial, satu font kuning bold.",
+    referenceUrl: "https://linear.app/method/design",
+    tags: ["#Experiments", "#Thumbnail"],
+    createdAt: "2026-10-24",
+  },
+  {
+    id: "idea-2",
+    workspaceId: "ws-1",
+    title: "Cara Menolak Tawaran Sponsor Murah & Menaikkan Rate Card 3x Lipat",
+    niche: "Creator Business",
+    notes: "Template email negosiasi, value-based pricing, dan bundling multi-platform.",
+    referenceUrl: "",
+    tags: ["#Sponsorships", "#Pricing"],
+    createdAt: "2026-10-23",
+  },
+  {
+    id: "idea-3",
+    workspaceId: "ws-1",
+    title: "Behind the Scenes: Cara Saya Batching 12 Video Vertikal dalam 1 Hari",
+    niche: "Productivity",
+    notes: "Workflow audio recording dan template auto-caption cut.",
+    referenceUrl: "",
+    tags: ["#Productivity", "#Batching"],
+    createdAt: "2026-10-22",
+  },
+];
+
+const defaultContacts: ContactItem[] = [
+  {
+    id: "con-1",
+    workspaceId: "ws-1",
+    name: "Sarah Jenkins",
+    company: "Vercel",
+    role: "Developer Relations Partner",
+    email: "sarah.j@vercel.com",
+    dealStatus: "Signed",
+    dealValue: 4500,
+    linkedContentTitle: "Next.js 16 Server Actions & Parallel Queue Masterclass",
+  },
+  {
+    id: "con-2",
+    workspaceId: "ws-1",
+    name: "Alex Rivera",
+    company: "Supabase",
+    role: "Growth Marketing Lead",
+    email: "alex@supabase.io",
+    dealStatus: "Signed",
+    dealValue: 3200,
+    linkedContentTitle: "Cara Mengotomasi Workflow Konten CRM",
+  },
+  {
+    id: "con-3",
+    workspaceId: "ws-1",
+    name: "Elena Rostova",
+    company: "Linear",
+    role: "Brand Partnership",
+    email: "elena@linear.app",
+    dealStatus: "Negotiation",
+    dealValue: 2800,
+  },
+  {
+    id: "con-4",
+    workspaceId: "ws-1",
+    name: "Dimas Wicaksono",
+    company: "Logitech Indonesia",
+    role: "Creator Specialist",
+    email: "dimas@logitech.co.id",
+    dealStatus: "Sponsored",
+    dealValue: 1500,
+    linkedContentTitle: "Review Keyboard Low-Profile Logitech MX Mechanical Mini",
+  },
+];
+
+const defaultNotifications: NotificationItem[] = [
+  {
+    id: "notif-1",
+    workspaceId: "ws-1",
+    title: "1-Click Publish Sukses!",
+    message: "Konten '5 AI Tools That Save 20 Hours/Week' berhasil terbit ke YouTube Shorts, IG Reels, TikTok, dan Facebook Page.",
+    type: "publish_success",
+    time: "10 menit yang lalu",
+    read: false,
+  },
+  {
+    id: "notif-2",
+    workspaceId: "ws-1",
+    title: "Penjadwalan Aktif (19:00 WIB)",
+    message: "Konten sponsorship 'Review Logitech MX Mechanical Mini' siap dipublikasikan secara otomatis tepat waktu.",
+    type: "system",
+    time: "1 jam yang lalu",
+    read: false,
+  },
+  {
+    id: "notif-3",
+    workspaceId: "ws-1",
+    title: "Token OAuth YouTube Segar",
+    message: "Kuota harian API YouTube: 8,400 dari 10,000 unit tersedia.",
+    type: "system",
+    time: "3 jam yang lalu",
+    read: true,
+  },
+];
+
+const AppContext = createContext<AppContextType | undefined>(undefined);
+
+export function AppProvider({ children }: { children: React.ReactNode }) {
+  const [activePage, setActivePage] = useState<ActivePage>("dashboard");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const [workspaces, setWorkspaces] = useState<Workspace[]>(defaultWorkspaces);
+  const [activeWorkspace, setActiveWorkspace] = useState<Workspace>(defaultWorkspaces[0]);
+
+  const [socialAccounts, setSocialAccounts] = useState<SocialAccount[]>(defaultAccounts);
+  const [contentItems, setContentItems] = useState<ContentItem[]>(defaultContent);
+  const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>(defaultMedia);
+  const [ideas, setIdeas] = useState<IdeaItem[]>(defaultIdeas);
+  const [contacts, setContacts] = useState<ContactItem[]>(defaultContacts);
+  const [notifications, setNotifications] = useState<NotificationItem[]>(defaultNotifications);
+
+  const [isSupabaseLive, setIsSupabaseLive] = useState(false);
+
+  const [composerPrefill, setComposerPrefill] = useState<{
+    title?: string;
+    caption?: string;
+    mediaName?: string;
+  } | null>(null);
+
+  const [publishProgress, setPublishProgress] = useState<PublishProgressState>({
+    isOpen: false,
+    jobTitle: "",
+    idempotencyKey: "",
+    targets: [],
+    overallProgress: 0,
+    overallStatus: "",
+    isComplete: false,
+  });
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev));
+    }, 3200);
+  };
+
+  // Sync / Read from Supabase on load
+  const refreshFromSupabase = useCallback(async () => {
+    try {
+      // 1. Workspaces
+      const { data: wsData, error: wsError } = await supabase.from("workspaces").select("*");
+      if (!wsError && wsData && wsData.length > 0) {
+        setIsSupabaseLive(true);
+        const mappedWs: Workspace[] = wsData.map((w: any) => ({
+          id: w.id,
+          name: w.name,
+          description: w.description || "",
+          color: w.color || "#0A0A0A",
+          initials: w.initials || "WS",
+          connectedAccountsCount: 4,
+          contentCount: 8,
+          role: w.role || "Owner",
+          createdAt: w.created_at?.split("T")[0] || "2026-01-01",
+        }));
+        setWorkspaces(mappedWs);
+        setActiveWorkspace(mappedWs[0]);
+      }
+
+      // 2. Content Items (Pipeline CRM)
+      const { data: cData, error: cError } = await supabase.from("content_items").select("*").order("created_at", { ascending: false });
+      if (!cError && cData && cData.length > 0) {
+        setIsSupabaseLive(true);
+        const mappedContent: ContentItem[] = cData.map((c: any) => ({
+          id: c.id,
+          workspaceId: c.workspace_id,
+          title: c.title,
+          stage: c.stage,
+          pillar: c.pillar,
+          priority: c.priority,
+          deadline: c.deadline || "2026-11-01",
+          notes: c.notes || "",
+          script: c.script || "",
+          checklist: Array.isArray(c.checklist) ? c.checklist : [],
+          tags: c.tags || [],
+          mediaAssetId: c.media_asset_id,
+          mediaName: c.media_name,
+          targetPlatforms: c.target_platforms || ["youtube", "instagram", "tiktok", "facebook"],
+          scheduledAt: c.scheduled_at,
+          publishedUrl: c.published_url,
+          viewsCount: Number(c.views_count) || 0,
+          likesCount: Number(c.likes_count) || 0,
+          createdAt: c.created_at?.split("T")[0] || "2026-10-25",
+        }));
+        setContentItems(mappedContent);
+      }
+
+      // 3. Ideas Bank
+      const { data: iData, error: iError } = await supabase.from("ideas").select("*").order("created_at", { ascending: false });
+      if (!iError && iData && iData.length > 0) {
+        setIdeas(
+          iData.map((i: any) => ({
+            id: i.id,
+            workspaceId: i.workspace_id,
+            title: i.title,
+            niche: i.niche || "Tech & AI",
+            notes: i.notes || "",
+            referenceUrl: i.reference_url || "",
+            tags: i.tags || [],
+            createdAt: i.created_at?.split("T")[0] || "2026-10-25",
+          }))
+        );
+      }
+
+      // 4. Contacts (Sponsors)
+      const { data: conData, error: conError } = await supabase.from("contacts").select("*").order("created_at", { ascending: false });
+      if (!conError && conData && conData.length > 0) {
+        setContacts(
+          conData.map((con: any) => ({
+            id: con.id,
+            workspaceId: con.workspace_id,
+            name: con.name,
+            company: con.company,
+            role: con.role || "",
+            email: con.email || "",
+            dealStatus: con.deal_status,
+            dealValue: Number(con.deal_value) || 0,
+            linkedContentTitle: con.linked_content_title || "",
+          }))
+        );
+      }
+
+      // 5. Social Accounts
+      const { data: accData, error: accError } = await supabase.from("social_accounts").select("*");
+      if (!accError && accData && accData.length > 0) {
+        setSocialAccounts(
+          accData.map((a: any) => ({
+            id: a.id,
+            workspaceId: a.workspace_id,
+            platform: a.platform,
+            displayName: a.display_name,
+            handle: a.handle,
+            avatarUrl: a.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100",
+            accountType: a.account_type || `${a.platform.toUpperCase()} Account`,
+            status: a.status,
+            apiQuotaUsed: a.api_quota_used,
+            apiQuotaMax: a.api_quota_max,
+            tokenExpiresIn: "Aktif",
+            scopes: a.scopes || [],
+          }))
+        );
+      }
+    } catch {
+      // Fallback to default mock data if network or permissions not ready
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshFromSupabase();
+  }, [refreshFromSupabase]);
+
+  // CRUD Workspaces (with Supabase write)
+  const addWorkspace = async (name: string, description: string) => {
+    const initials = name
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase() || "WS";
+
+    const newWs: Workspace = {
+      id: `ws-${Date.now()}`,
+      name,
+      description,
+      color: "#0A0A0A",
+      initials,
+      connectedAccountsCount: 0,
+      contentCount: 0,
+      role: "Owner",
+      createdAt: new Date().toISOString().split("T")[0],
+    };
+
+    setWorkspaces((prev) => [...prev, newWs]);
+    setActiveWorkspace(newWs);
+
+    try {
+      await supabase.from("workspaces").insert({
+        id: newWs.id,
+        name: newWs.name,
+        description: newWs.description,
+        color: newWs.color,
+        initials: newWs.initials,
+        role: newWs.role,
+      });
+    } catch {
+      // ignore
+    }
+    showToast(`Workspace "${name}" berhasil dibuat & tersimpan di Supabase.`);
+  };
+
+  // CRUD Content Items (with Supabase write)
+  const addContentItem = async (
+    item: Omit<ContentItem, "id" | "workspaceId" | "createdAt">
+  ) => {
+    const newItem: ContentItem = {
+      ...item,
+      id: `c-${Date.now()}`,
+      workspaceId: activeWorkspace.id,
+      createdAt: new Date().toISOString().split("T")[0],
+    };
+
+    setContentItems((prev) => [newItem, ...prev]);
+
+    try {
+      await supabase.from("content_items").insert({
+        id: newItem.id,
+        workspace_id: newItem.workspaceId,
+        title: newItem.title,
+        stage: newItem.stage,
+        pillar: newItem.pillar,
+        priority: newItem.priority,
+        deadline: newItem.deadline,
+        notes: newItem.notes,
+        script: newItem.script,
+        checklist: newItem.checklist,
+        tags: newItem.tags,
+        media_name: newItem.mediaName,
+        target_platforms: newItem.targetPlatforms,
+        scheduled_at: newItem.scheduledAt,
+      });
+    } catch {
+      // ignore
+    }
+    showToast(`Konten "${newItem.title}" ditambahkan ke pipeline.`);
+  };
+
+  const updateContentStage = async (id: string, stage: ContentStage) => {
+    setContentItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, stage } : item))
+    );
+
+    try {
+      await supabase.from("content_items").update({ stage }).eq("id", id);
+    } catch {
+      // ignore
+    }
+    showToast(`Tahap konten dipindahkan ke "${stage.replace("_", " ").toUpperCase()}".`);
+  };
+
+  const deleteContentItem = async (id: string) => {
+    setContentItems((prev) => prev.filter((item) => item.id !== id));
+    try {
+      await supabase.from("content_items").delete().eq("id", id);
+    } catch {
+      // ignore
+    }
+    showToast("Konten dihapus dari pipeline.");
+  };
+
+  const toggleChecklist = async (contentId: string, checklistId: string) => {
+    let updatedChecklist: any[] = [];
+    setContentItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== contentId) return item;
+        updatedChecklist = item.checklist.map((ck) =>
+          ck.id === checklistId ? { ...ck, done: !ck.done } : ck
+        );
+        return { ...item, checklist: updatedChecklist };
+      })
+    );
+
+    try {
+      await supabase
+        .from("content_items")
+        .update({ checklist: updatedChecklist })
+        .eq("id", contentId);
+    } catch {
+      // ignore
+    }
+  };
+
+  // Media Assets
+  const addMediaAsset = async (
+    asset: Omit<MediaAsset, "id" | "workspaceId" | "uploadedAt">
+  ) => {
+    const newAsset: MediaAsset = {
+      ...asset,
+      id: `m-${Date.now()}`,
+      workspaceId: activeWorkspace.id,
+      uploadedAt: new Date().toISOString().replace("T", " ").substring(0, 16),
+    };
+
+    setMediaAssets((prev) => [newAsset, ...prev]);
+
+    try {
+      await supabase.from("media_assets").insert({
+        id: newAsset.id,
+        workspace_id: newAsset.workspaceId,
+        name: newAsset.name,
+        duration: newAsset.duration,
+        aspect_ratio: newAsset.aspectRatio,
+        size: newAsset.size,
+        resolution: newAsset.resolution,
+        thumbnail_url: newAsset.thumbnailUrl,
+        tags: newAsset.tags,
+      });
+    } catch {
+      // ignore
+    }
+    showToast(`Aset media "${newAsset.name}" berhasil diunggah.`);
+  };
+
+  // Ideas Bank (with Supabase write)
+  const addIdea = async (idea: Omit<IdeaItem, "id" | "workspaceId" | "createdAt">) => {
+    const newIdea: IdeaItem = {
+      ...idea,
+      id: `idea-${Date.now()}`,
+      workspaceId: activeWorkspace.id,
+      createdAt: new Date().toISOString().split("T")[0],
+    };
+
+    setIdeas((prev) => [newIdea, ...prev]);
+
+    try {
+      await supabase.from("ideas").insert({
+        id: newIdea.id,
+        workspace_id: newIdea.workspaceId,
+        title: newIdea.title,
+        niche: newIdea.niche,
+        notes: newIdea.notes,
+        reference_url: newIdea.referenceUrl,
+        tags: newIdea.tags,
+      });
+    } catch {
+      // ignore
+    }
+    showToast(`Ide "${newIdea.title}" disimpan ke Ideas Bank.`);
+  };
+
+  const convertIdeaToPipeline = async (ideaId: string) => {
+    const targetIdea = ideas.find((i) => i.id === ideaId);
+    if (!targetIdea) return;
+
+    const newContent: ContentItem = {
+      id: `c-${Date.now()}`,
+      workspaceId: activeWorkspace.id,
+      title: targetIdea.title,
+      stage: "ide",
+      pillar: "Tech Reviews",
+      priority: "medium",
+      deadline: new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
+      notes: targetIdea.notes,
+      tags: targetIdea.tags,
+      checklist: [
+        { id: `ck-conv-1`, text: "Validasi sudut pandang & hook", done: false },
+        { id: `ck-conv-2`, text: "Tulis naskah kasar 60 detik", done: false },
+      ],
+      targetPlatforms: ["youtube", "instagram", "tiktok", "facebook"],
+      createdAt: new Date().toISOString().split("T")[0],
+    };
+
+    setContentItems((prev) => [newContent, ...prev]);
+    setIdeas((prev) => prev.filter((i) => i.id !== ideaId));
+
+    try {
+      await supabase.from("content_items").insert({
+        id: newContent.id,
+        workspace_id: newContent.workspaceId,
+        title: newContent.title,
+        stage: "ide",
+        pillar: newContent.pillar,
+        priority: newContent.priority,
+        deadline: newContent.deadline,
+        notes: newContent.notes,
+        checklist: newContent.checklist,
+        tags: newContent.tags,
+      });
+      await supabase.from("ideas").delete().eq("id", ideaId);
+    } catch {
+      // ignore
+    }
+
+    showToast(`Ide berhasil dikonversi menjadi kartu Pipeline!`);
+    setActivePage("pipeline");
+  };
+
+  const deleteIdea = async (ideaId: string) => {
+    setIdeas((prev) => prev.filter((i) => i.id !== ideaId));
+    try {
+      await supabase.from("ideas").delete().eq("id", ideaId);
+    } catch {
+      // ignore
+    }
+    showToast("Ide dihapus dari Ideas Bank.");
+  };
+
+  // Contacts
+  const addContact = async (contact: Omit<ContactItem, "id" | "workspaceId">) => {
+    const newContact: ContactItem = {
+      ...contact,
+      id: `con-${Date.now()}`,
+      workspaceId: activeWorkspace.id,
+    };
+
+    setContacts((prev) => [newContact, ...prev]);
+
+    try {
+      await supabase.from("contacts").insert({
+        id: newContact.id,
+        workspace_id: newContact.workspaceId,
+        name: newContact.name,
+        company: newContact.company,
+        role: newContact.role,
+        email: newContact.email,
+        deal_status: newContact.dealStatus,
+        deal_value: newContact.dealValue,
+        linked_content_title: newContact.linkedContentTitle,
+      });
+    } catch {
+      // ignore
+    }
+    showToast(`Kontak brand "${newContact.company}" ditambahkan.`);
+  };
+
+  // Notifications
+  const addNotification = async (
+    title: string,
+    message: string,
+    type: NotificationItem["type"]
+  ) => {
+    const newNotif: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      workspaceId: activeWorkspace.id,
+      title,
+      message,
+      type,
+      time: "Baru saja",
+      read: false,
+    };
+    setNotifications((prev) => [newNotif, ...prev]);
+
+    try {
+      await supabase.from("notifications").insert({
+        id: newNotif.id,
+        workspace_id: newNotif.workspaceId,
+        title,
+        message,
+        type,
+        is_read: false,
+      });
+    } catch {
+      // ignore
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    try {
+      await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("workspace_id", activeWorkspace.id);
+    } catch {
+      // ignore
+    }
+    showToast("Semua notifikasi ditandai sudah dibaca.");
+  };
+
+  const unreadNotifCount = notifications.filter((n) => !n.read).length;
+
+  const toggleAccountStatus = async (id: string) => {
+    setSocialAccounts((prev) =>
+      prev.map((acc) =>
+        acc.id === id
+          ? {
+              ...acc,
+              status: acc.status === "active" ? "reauth_required" : "active",
+            }
+          : acc
+      )
+    );
+  };
+
+  const reconnectAccount = async (id: string) => {
+    setSocialAccounts((prev) =>
+      prev.map((acc) =>
+        acc.id === id
+          ? {
+              ...acc,
+              status: "active",
+              tokenExpiresIn: "60 hari (Refreshed)",
+            }
+          : acc
+      )
+    );
+  };
+
+  // 1-Click Publishing Runner (With Supabase Posts & Targets Records)
+  const startPublishProcess = (
+    title: string,
+    caption: string,
+    platforms: Platform[],
+    mediaName: string,
+    overrides?: Record<Platform, any>
+  ) => {
+    const idempotencyKey = `sph-job-${Math.random().toString(36).substring(2, 8)}-${Date.now().toString(36)}`;
+    const postId = `post-${Date.now()}`;
+
+    const targets: PostTarget[] = platforms.map((p) => {
+      const acc = socialAccounts.find((a) => a.platform === p);
+      return {
+        platform: p,
+        accountId: acc?.id || `acc-${p}`,
+        accountName: acc?.displayName || p.toUpperCase(),
+        status: "queued",
+        progress: 10,
+        overrides: overrides?.[p],
+      };
+    });
+
+    setPublishProgress({
+      isOpen: true,
+      jobTitle: title,
+      idempotencyKey,
+      targets,
+      overallProgress: 15,
+      overallStatus: `Menginisialisasi ${platforms.length} antrean paralel...`,
+      isComplete: false,
+    });
+
+    // Write initial post record to Supabase
+    supabase.from("posts").insert({
+      id: postId,
+      workspace_id: activeWorkspace.id,
+      title,
+      base_caption: caption,
+      media_name: mediaName,
+      status: "publishing",
+      idempotency_key: idempotencyKey,
+    }).then(() => {});
+
+    setTimeout(() => {
+      setPublishProgress((prev) => ({
+        ...prev,
+        overallProgress: 45,
+        overallStatus: "Mengunggah file video (TUS Resumable) ke storage CDN...",
+        targets: prev.targets.map((t) => ({
+          ...t,
+          status: "uploading",
+          progress: 50,
+        })),
+      }));
+    }, 1200);
+
+    setTimeout(() => {
+      setPublishProgress((prev) => ({
+        ...prev,
+        overallProgress: 80,
+        overallStatus: "Platform memproses metadata, transcode & content review...",
+        targets: prev.targets.map((t) => ({
+          ...t,
+          status: "processing",
+          progress: 85,
+        })),
+      }));
+    }, 2500);
+
+    setTimeout(() => {
+      setPublishProgress((prev) => {
+        const updatedTargets = prev.targets.map((t) => {
+          if (t.platform === "tiktok" && Math.random() < 0.2) {
+            return {
+              ...t,
+              status: "failed" as const,
+              progress: 85,
+              lastError: "Rate limit: TikTok API direct post sedang padat. Silakan klik Retry.",
+            };
+          }
+          return {
+            ...t,
+            status: "published" as const,
+            progress: 100,
+            externalPostId: `post-${t.platform}-${Math.floor(100000 + Math.random() * 900000)}`,
+            externalUrl:
+              t.platform === "youtube"
+                ? "https://youtube.com/shorts/sph_demo"
+                : t.platform === "instagram"
+                ? "https://instagram.com/reel/sph_demo"
+                : t.platform === "tiktok"
+                ? "https://tiktok.com/@techpulse/video/sph_demo"
+                : "https://facebook.com/watch/?v=sph_demo",
+            publishedAt: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+          };
+        });
+
+        const hasFailed = updatedTargets.some((t) => t.status === "failed");
+
+        // Update post status in Supabase
+        supabase.from("posts").update({ status: hasFailed ? "partial" : "published" }).eq("id", postId).then(() => {});
+
+        return {
+          ...prev,
+          overallProgress: 100,
+          overallStatus: hasFailed
+            ? "Publikasi parsial selesai (Ada platform yang memerlukan retry)"
+            : "Publikasi ke semua platform selesai 100%!",
+          targets: updatedTargets,
+          isComplete: true,
+        };
+      });
+
+      // Add to pipeline as 'terbit'
+      addContentItem({
+        title,
+        stage: "terbit",
+        pillar: "Tech Reviews",
+        priority: "high",
+        deadline: new Date().toISOString().split("T")[0],
+        tags: ["#Published", "#1Click", "#MultiPlatform"],
+        targetPlatforms: platforms,
+        publishedUrl: "https://youtube.com/shorts/sph_demo",
+        viewsCount: 1,
+        likesCount: 0,
+        checklist: [{ id: "ck-auto-pub", text: "Terbit via 1-Click Publishing", done: true }],
+      });
+
+      addNotification(
+        "1-Click Publish Sukses!",
+        `Konten "${title}" berhasil dikirim ke antrean multi-platform.`,
+        "publish_success"
+      );
+    }, 4200);
+  };
+
+  const retryPlatformPublish = (platform: Platform) => {
+    setPublishProgress((prev) => ({
+      ...prev,
+      targets: prev.targets.map((t) =>
+        t.platform === platform
+          ? { ...t, status: "processing", progress: 60, lastError: undefined }
+          : t
+      ),
+    }));
+
+    setTimeout(() => {
+      setPublishProgress((prev) => ({
+        ...prev,
+        targets: prev.targets.map((t) =>
+          t.platform === platform
+            ? {
+                ...t,
+                status: "published",
+                progress: 100,
+                externalPostId: `post-${t.platform}-retry-ok`,
+                externalUrl: `https://${t.platform}.com/video/retried_ok`,
+                publishedAt: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+              }
+            : t
+        ),
+        overallStatus: "Retry berhasil! Semua platform terbit sempurna.",
+      }));
+      showToast(`Retry publish untuk ${platform.toUpperCase()} berhasil.`);
+    }, 1800);
+  };
+
+  const closePublishModal = () => {
+    setPublishProgress((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  return (
+    <AppContext.Provider
+      value={{
+        activePage,
+        setActivePage,
+        searchQuery,
+        setSearchQuery,
+        workspaces,
+        activeWorkspace,
+        setActiveWorkspace,
+        addWorkspace,
+        socialAccounts,
+        toggleAccountStatus,
+        reconnectAccount,
+        contentItems,
+        addContentItem,
+        updateContentStage,
+        deleteContentItem,
+        toggleChecklist,
+        mediaAssets,
+        addMediaAsset,
+        ideas,
+        addIdea,
+        convertIdeaToPipeline,
+        deleteIdea,
+        contacts,
+        addContact,
+        notifications,
+        unreadNotifCount,
+        markAllNotificationsAsRead,
+        addNotification,
+        publishProgress,
+        startPublishProcess,
+        retryPlatformPublish,
+        closePublishModal,
+        toastMessage,
+        showToast,
+        composerPrefill,
+        setComposerPrefill,
+        isSupabaseLive,
+        refreshFromSupabase,
+      }}
+    >
+      {children}
+    </AppContext.Provider>
+  );
+}
+
+export function useApp() {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error("useApp must be used within an AppProvider");
+  }
+  return context;
+}
