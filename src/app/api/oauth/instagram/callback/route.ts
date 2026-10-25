@@ -81,6 +81,7 @@ export async function GET(req: NextRequest) {
       // Simpan Facebook Page
       await supabaseServer.from("social_accounts").upsert(
         {
+          id: `acc-fb-${page.id}`,
           workspace_id: "ws-1",
           platform: "facebook",
           external_account_id: page.id,
@@ -104,6 +105,7 @@ export async function GET(req: NextRequest) {
 
         await supabaseServer.from("social_accounts").upsert(
           {
+            id: `acc-ig-${ig.id}`,
             workspace_id: "ws-1",
             platform: "instagram",
             external_account_id: ig.id,

@@ -23,9 +23,37 @@ import { SettingsView } from "@/components/views/SettingsView";
 import { Loader2 } from "lucide-react";
 
 function MainContent() {
-  const { user, authLoading, activePage, toastMessage } = useApp();
+  const {
+    user,
+    authLoading,
+    activePage,
+    setActivePage,
+    toastMessage,
+    showToast,
+    refreshFromSupabase,
+  } = useApp();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [workspaceModalOpen, setWorkspaceModalOpen] = useState(false);
+
+  // Handle OAuth Redirect URL Params
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get("connected");
+    const handle = params.get("handle");
+    const oauthError = params.get("oauth_error");
+
+    if (connected) {
+      showToast(`Berhasil! Akun ${connected.toUpperCase()} (${handle || ""}) telah terhubung.`);
+      setActivePage("accounts");
+      refreshFromSupabase();
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (oauthError) {
+      showToast(`Gagal otorisasi: ${oauthError}`);
+      setActivePage("accounts");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [showToast, setActivePage, refreshFromSupabase]);
 
   // 1. Loading state while checking Supabase session
   if (authLoading) {

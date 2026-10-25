@@ -137,58 +137,7 @@ const defaultWorkspaces: Workspace[] = [
   },
 ];
 
-const defaultAccounts: SocialAccount[] = [
-  {
-    id: "acc-yt-1",
-    workspaceId: "ws-1",
-    platform: "youtube",
-    displayName: "YouTube Channel",
-    handle: "Belum terhubung",
-    avatarUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=60",
-    accountType: "YouTube Channel",
-    status: "disconnected",
-    apiQuotaUsed: 0,
-    apiQuotaMax: 10000,
-    tokenExpiresIn: "Belum login",
-    scopes: ["youtube.upload", "youtube.readonly"],
-  },
-  {
-    id: "acc-ig-1",
-    workspaceId: "ws-1",
-    platform: "instagram",
-    displayName: "Instagram Business",
-    handle: "Belum terhubung",
-    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60",
-    accountType: "Instagram Business Creator",
-    status: "disconnected",
-    tokenExpiresIn: "Belum login",
-    scopes: ["instagram_content_publish", "instagram_basic"],
-  },
-  {
-    id: "acc-tt-1",
-    workspaceId: "ws-1",
-    platform: "tiktok",
-    displayName: "TikTok Account",
-    handle: "Belum terhubung",
-    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60",
-    accountType: "TikTok Direct Post API",
-    status: "disconnected",
-    tokenExpiresIn: "Belum login",
-    scopes: ["video.upload", "video.publish"],
-  },
-  {
-    id: "acc-fb-1",
-    workspaceId: "ws-1",
-    platform: "facebook",
-    displayName: "Facebook Page",
-    handle: "Belum terhubung",
-    avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=60",
-    accountType: "Facebook Page",
-    status: "disconnected",
-    tokenExpiresIn: "Belum login",
-    scopes: ["pages_manage_posts"],
-  },
-];
+const defaultAccounts: SocialAccount[] = [];
 
 const defaultContent: ContentItem[] = [
   {
@@ -698,7 +647,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       // 5. Social Accounts
       const { data: accData, error: accError } = await supabase.from("social_accounts").select("*");
-      if (!accError && accData && accData.length > 0) {
+      if (!accError && Array.isArray(accData)) {
         setSocialAccounts(
           accData.map((a: any) => ({
             id: a.id,

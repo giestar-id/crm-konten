@@ -42,30 +42,57 @@ export async function GET(req: NextRequest) {
     const accessToken = tokenData.access_token;
     const refreshToken = tokenData.refresh_token;
 
-    // 2. Ambil info channel YouTube
-    const channelRes = await fetch(
-      "https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true",
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
+    // 2. Ambil info channel YouTube (atau fallback ke info profil Google)
+    let channelId = `yt-${Date.now().toString(36)}`;
+    let channelTitle = "My YouTube Channel";
+    let avatarUrl = "";
+    let customHandle = "@youtube";
+
+    try {
+      const channelRes = await fetch(
+        "https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true",
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      const channelData = await channelRes.json();
+      const channel = channelData.items?.[0];
+
+      if (channel) {
+        channelId = channel.id;
+        channelTitle = channel.snippet?.title || "My YouTube Channel";
+        avatarUrl = channel.snippet?.thumbnails?.default?.url || "";
+        customHandle = channel.snippet?.customUrl || `@${channelTitle.replace(/\s+/g, "").toLowerCase()}`;
+      } else {
+        // Fallback ke Google Profile jika channel belum disetup di YouTube
+        const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        const userData = await userRes.json();
+        channelId = userData.id || channelId;
+        channelTitle = userData.name || "Akun Google YouTube";
+        avatarUrl = userData.picture || "";
+        customHandle = userData.email ? `@${userData.email.split("@")[0]}` : "@youtube";
       }
-    );
-    const channelData = await channelRes.json();
-    const channel = channelData.items?.[0];
+    } catch {
+      // ignore
+    }
 
-    const channelId = channel?.id || "yt-unknown-id";
-    const channelTitle = channel?.snippet?.title || "My YouTube Channel";
-    const avatarUrl = channel?.snippet?.thumbnails?.default?.url || "";
+    const accountRowId = `acc-yt-${channelId}`;
 
-    // 3. Simpan ke Supabase social_accounts
-    await supabaseServer.from("social_accounts").upsert(
+    // 3. Simpan ke Supabase social_accounts (Wajib sertakan id PRIMARY KEY)
+    const { error: dbError } = await supabaseServer.from("social_accounts").upsert(
       {
+        id: accountRowId,
         workspace_id: "ws-1",
         platform: "youtube",
         external_account_id: channelId,
         display_name: channelTitle,
-        handle: channel?.snippet?.customUrl || `@${channelTitle.replace(/\s+/g, "").toLowerCase()}`,
+        handle: customHandle,
         avatar_url: avatarUrl,
-        access_token: refreshToken || accessToken, // simpan refresh token
+        account_type: "YouTube Channel",
+        access_token: refreshToken || accessToken,
+        refresh_token: refreshToken || null,
         token_expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
         scopes: [
           "https://www.googleapis.com/auth/youtube.upload",
@@ -76,6 +103,13 @@ export async function GET(req: NextRequest) {
       },
       { onConflict: "workspace_id,platform,external_account_id" }
     );
+
+    if (dbError) {
+      console.error("Supabase upsert error:", dbError);
+      return NextResponse.redirect(
+        new URL(`/?oauth_error=${encodeURIComponent(dbError.message)}`, baseUrl)
+      );
+    }
 
     return NextResponse.redirect(
       new URL(`/?connected=youtube&handle=${encodeURIComponent(channelTitle)}`, baseUrl)

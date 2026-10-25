@@ -674,7 +674,24 @@ export function ComposerView() {
             </div>
 
             <div className="space-y-2.5">
-              {socialAccounts.map((acc) => {
+              {socialAccounts.length === 0 ? (
+                <div className="p-4 border border-dashed border-[#EAEAEA] rounded-xl text-center bg-[#FAFAFA] space-y-2">
+                  <p className="text-xs font-semibold text-neutral-800">
+                    Belum ada akun yang terhubung
+                  </p>
+                  <p className="text-[11px] text-[#737373] leading-relaxed">
+                    Hubungkan channel YouTube, Instagram, TikTok, atau Facebook Anda terlebih dahulu.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActivePage("accounts")}
+                    className="mt-1 px-3 py-1.5 rounded-lg bg-[#0A0A0A] text-white text-xs font-semibold hover:bg-neutral-800 transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <span>Ke Menu Akun Sosial</span>
+                  </button>
+                </div>
+              ) : (
+                socialAccounts.map((acc) => {
                 const isChecked = selectedAccountIds.includes(acc.id);
                 const isConnected = acc.status === "active";
 
@@ -722,7 +739,8 @@ export function ComposerView() {
                     </span>
                   </div>
                 );
-              })}
+              })
+            )}
             </div>
 
             <div className="pt-2 border-t border-[#EAEAEA] flex justify-between items-center text-xs">

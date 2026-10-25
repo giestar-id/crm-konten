@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
     // 3. Simpan ke Supabase social_accounts
     await supabaseServer.from("social_accounts").upsert(
       {
+        id: `acc-tt-${open_id}`,
         workspace_id: "ws-1",
         platform: "tiktok",
         external_account_id: open_id,
